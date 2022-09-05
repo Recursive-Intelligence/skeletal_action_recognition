@@ -19,12 +19,17 @@ import torch
 import cv2
 import pickle
 from tqdm import tqdm
-
+import sys
 # opendr imports
+# print(sys.path)
+# sys.path.insert(1, "../")
+# # os.chdir("..")
+# print(sys.path)
 from pose_estimation import LightweightOpenPoseLearner
 from utils.data import Image
 from utils.target import Pose
 import argparse
+
 from pose_estimation.lightweight_open_pose.filtered_pose import FilteredPose
 from pose_estimation.lightweight_open_pose.utilities import track_poses
 from pose_estimation.lightweight_open_pose.algorithm.modules.keypoints import (
@@ -352,7 +357,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--videos_path",
         type=str,
-        default="/mnt/archive/nh/NTU60_RGB_Videos/nturgb+d_rgb",
+        # default="/mnt/archive/nh/NTU60_RGB_Videos/nturgb+d_rgb",
+        default="/media/lakpa/Storage/youngdusan_data/youngdusan_video_data/big_wind",
         help="path to video files",
     )
     parser.add_argument(
@@ -363,7 +369,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--out_folder",
-        default="/mnt/archive/nh/NTU60_Skeletons_LightweightOpenPose/2dSkeletons",
+        # default="/mnt/archive/nh/NTU60_Skeletons_LightweightOpenPose/2dSkeletons",
+        default="/media/lakpa/Storage/youngdusan_data/test",
     )
     args = parser.parse_args()
 

@@ -28,7 +28,12 @@ from torch.nn import DataParallel
 from tensorboardX import SummaryWriter
 from torchvision import transforms
 from urllib.request import urlretrieve
-
+import sys
+# print(os.environ['PYTHONPATH'].split(os.pathsep))
+from pathlib import Path
+# path = str(Path(Path(__file__).parent.absolute()).parent.absolute())
+# print(path + "/")
+# sys.path.insert(0, path+ "/")
 # OpenDR engine imports
 from utils.learners import Learner
 from utils.datasets import ExternalDataset, DatasetIterator
@@ -37,30 +42,30 @@ from utils.target import Pose
 from utils.constants import OPENDR_SERVER_URL
 
 # OpenDR lightweight_open_pose imports
-from filtered_pose import FilteredPose
-from utilities import track_poses
-from algorithm.models.with_mobilenet import PoseEstimationWithMobileNet
-from algorithm.models.with_mobilenet_v2 import PoseEstimationWithMobileNetV2
-from algorithm.models.with_shufflenet import PoseEstimationWithShuffleNet
-from algorithm.modules.get_parameters import (
+from pose_estimation.lightweight_open_pose.filtered_pose import FilteredPose
+from pose_estimation.lightweight_open_pose.utilities import track_poses
+from pose_estimation.lightweight_open_pose.algorithm.models.with_mobilenet import PoseEstimationWithMobileNet
+from pose_estimation.lightweight_open_pose.algorithm.models.with_mobilenet_v2 import PoseEstimationWithMobileNetV2
+from pose_estimation.lightweight_open_pose.algorithm.models.with_shufflenet import PoseEstimationWithShuffleNet
+from pose_estimation.lightweight_open_pose.algorithm.modules.get_parameters import (
     get_parameters_conv,
     get_parameters_bn,
     get_parameters_conv_depthwise,
 )
-from algorithm.modules.load_state import load_state  # , load_from_mobilenet
-from algorithm.modules.loss import l2_loss
-from algorithm.modules.keypoints import extract_keypoints, group_keypoints
-from algorithm.datasets.coco import CocoTrainDataset
-from algorithm.datasets.coco import CocoValDataset
-from algorithm.datasets.transformations import (
+from pose_estimation.lightweight_open_pose.algorithm.modules.load_state import load_state  # , load_from_mobilenet
+from pose_estimation.lightweight_open_pose.algorithm.modules.loss import l2_loss
+from pose_estimation.lightweight_open_pose.algorithm.modules.keypoints import extract_keypoints, group_keypoints
+from pose_estimation.lightweight_open_pose.algorithm.datasets.coco import CocoTrainDataset
+from pose_estimation.lightweight_open_pose.algorithm.datasets.coco import CocoValDataset
+from pose_estimation.lightweight_open_pose.algorithm.datasets.transformations import (
     ConvertKeypoints,
     Scale,
     Rotate,
     CropPad,
     Flip,
 )
-from algorithm.val import convert_to_coco_format, run_coco_eval, normalize, pad_width
-from algorithm.scripts import prepare_train_labels, make_val_subset
+from pose_estimation.lightweight_open_pose.algorithm.val import convert_to_coco_format, run_coco_eval, normalize, pad_width
+from pose_estimation.lightweight_open_pose.algorithm.scripts import prepare_train_labels, make_val_subset
 
 cv2.setNumThreads(0)
 cv2.ocl.setUseOpenCL(False)  # To prevent freeze of DataLoader
