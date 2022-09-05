@@ -45,6 +45,7 @@ from pose_estimation.lightweight_open_pose.algorithm.val import (
 class VideoReader(object):
     def __init__(self, file_name):
         self.file_name = file_name
+
         try:  # OpenCV needs int to read from webcam
             self.file_name = int(file_name)
         except ValueError:
@@ -82,13 +83,13 @@ def infer3Dpose(pose_estimator, img, upsample_ratio=4, track=True, smooth=True):
     if not isinstance(img, Image):
         img = Image(img)
     img = img.numpy()
+    img = np.transpose(img, (1, 2, 0))
 
-    height, width, _ = img.shape
+    _, height, width = img.shape
     scale = pose_estimator.base_height / height
 
     scaled_img = cv2.resize(
-        img, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_LINEAR
-    )
+        img, (0, 0), fx=scale, fy=scale)
     scaled_img = normalize(
         scaled_img, pose_estimator.img_mean, pose_estimator.img_scale
     )
@@ -209,14 +210,17 @@ def pose2numpy(num_frames, poses_list, kptscores_list, num_channels=3):
     C = num_channels
     T = 300
     V = 18
-    M = 2  # num_person_in
+    M = 1  # num_person_in
+    
     data_numpy = np.zeros((1, C, num_frames, V, M))
     skeleton_seq = np.zeros((1, C, T, V, M))
+    m = 0 # index of the person in video, 0 for single person
     for t in range(num_frames):
-        for m in range(len(poses_list[t])):
-            data_numpy[0, 0:2, t, :, m] = np.transpose(poses_list[t][m].data)
-            if C == 3:
-                data_numpy[0, 2, t, :, m] = kptscores_list[t][m][:, 0]
+        # for m in range(len(poses_list[t])):
+            # if m < 2:
+        data_numpy[0, 0:2, t, :, m] = np.transpose(poses_list[t][m].data)
+        if C == 3:
+            data_numpy[0, 2, t, :, m] = kptscores_list[t][m][:, 0]
 
     # if we have less than 300 frames, repeat frames to reach 300
     diff = T - num_frames
@@ -271,49 +275,63 @@ def data_gen(args, pose_estimator, out_path, benchmark, part):
         38,
     ]
     training_cameras = [2, 3]
-    if args.ignored_sample_path is not None:
-        with open(args.ignored_sample_path, "r") as f:
-            ignored_samples = [line.strip() + ".avi" for line in f.readlines()]
-    else:
-        ignored_samples = []
+    class_names = {"crafty_tricks" : 0, "sowing_corn_and_driving_pigeons" : 1, "waves_crashing" : 2, 
+                    "flower_clock" : 3, "wind_that_shakes_trees" : 4, "big_wind" : 5, 
+                    "bokbulbok" : 6, "seaweed_in_the_swell_sea" : 7, "chulong_chulong_phaldo" : 7, 
+                    "chalseok_chalseok_phaldo" : 8}
+    # if args.ignored_sample_path is not None:
+    #     with open(args.ignored_sample_path, "r") as f:
+    #         ignored_samples = [line.strip() + ".avi" for line in f.readlines()]
+    # else:
+    #     ignored_samples = []
 
     sample_names = []
     sample_labels = []
     for filename in os.listdir(args.videos_path):
-        if filename in ignored_samples:
-            continue
-        action_class = int(filename[filename.find("A") + 1 : filename.find("A") + 4])
-        subject_id = int(filename[filename.find("P") + 1 : filename.find("P") + 4])
-        camera_id = int(filename[filename.find("C") + 1 : filename.find("C") + 4])
+        # if filename in ignored_samples:
+        # TODO: Change action class name extraction method
+        #     continue
+        # action_class = int(filename[filename.find("A") + 1 : filename.find("A") + 4])
+        action_class = ("_").join((filename.split(".")[0]).split("_")[:-1])
+        # subject_id = int(filename[filename.find("P") + 1 : filename.find("P") + 4])
+        # camera_id = int(filename[filename.find("C") + 1 : filename.find("C") + 4])
 
-        if benchmark == "xview":
-            istraining = camera_id in training_cameras
-        elif benchmark == "xsub":
-            istraining = subject_id in training_subjects
-        else:
-            raise ValueError()
+        # if benchmark == "xview":
+        #     istraining = camera_id in training_cameras
+        # elif benchmark == "xsub":
+        #     istraining = subject_id in training_subjects
+        # else:
+        #     raise ValueError()
 
-        if part == "train":
-            issample = istraining
-        elif part == "val":
-            issample = not istraining
-        else:
-            raise ValueError()
+        # if part == "train":
+        #     issample = istraining
+        # elif part == "val":
+        #     issample = not istraining
+        # else:
+        #     raise ValueError()
 
-        if issample:
-            sample_name = (filename.split("."))[0].split("_")[0]
-            sample_names.append(sample_name)
-            sample_labels.append(action_class - 1)
+        # if issample:
+        sample_name = (filename.split("."))[0]
+        sample_names.append(sample_name)
+        
+        categorical_sample_names = []
+        for sample_name in sample_names:
+            for classname in sorted(list(class_names.keys())):
+                if classname == action_class:
+                    categorical_sample_name = sample_name.replace(sample_name, str(class_names[action_class]))
+                    categorical_sample_names.append(int(categorical_sample_name))
+                    
+        # sample_labels.append(action_class)
 
     with open("{}/{}_label.pkl".format(out_path, part), "wb") as f:
-        pickle.dump((sample_names, list(sample_labels)), f)
+        pickle.dump((sample_names, list(categorical_sample_names)), f)
 
     skeleton_data = np.zeros(
-        (len(sample_labels), args.num_channels, 300, 18, 2), dtype=np.float32
+        (len(sample_labels), args.num_channels, 300, 18, 1), dtype=np.float32
     )
 
     for i, s in enumerate(tqdm(sample_names)):
-        video_path = os.path.join(args.videos_path, s + "_rgb.avi")
+        video_path = os.path.join(args.videos_path, s + ".mov")
         image_provider = VideoReader(video_path)
         counter = 0
         poses_list = []
@@ -321,9 +339,10 @@ def data_gen(args, pose_estimator, out_path, benchmark, part):
         pose_estimator.previous_poses = []
         for img in image_provider:
             poses, kptscores = infer3Dpose(pose_estimator, img)
-            if len(poses) > 2:
-                # select two poses with highest energy
-                poses = select_2_poses(poses)
+            # Remove this: We dont need for persons more than 2
+            # if len(poses) > 2:
+            #     # select two poses with highest energy
+            #     poses = select_2_poses(poses)
             if len(poses) > 0:
                 counter += 1
                 poses_list.append(poses)
