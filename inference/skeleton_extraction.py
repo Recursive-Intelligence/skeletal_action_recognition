@@ -327,7 +327,7 @@ def data_gen(args, pose_estimator, out_path, benchmark, part):
         pickle.dump((sample_names, list(categorical_sample_names)), f)
 
     skeleton_data = np.zeros(
-        (len(sample_labels), args.num_channels, 300, 18, 1), dtype=np.float32
+        (len(categorical_sample_names), args.num_channels, 300, 18, 1), dtype=np.float32
     )
 
     for i, s in enumerate(tqdm(sample_names)):
