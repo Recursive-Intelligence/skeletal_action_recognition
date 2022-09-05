@@ -13,7 +13,7 @@ from pathlib import Path
 
 
 KINETICS400_CLASSES = pandas.read_csv(
-    Path(__file__).parent / "kinetics400_classes.csv", verbose=True, index_col=0
+    "../datasets/kinetics400_classes.csv", verbose=True, index_col=0
 ).to_dict()["name"]
 
 
