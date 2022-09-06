@@ -250,7 +250,7 @@ def select_2_poses(poses):
     return selected_poses
 
 
-def data_gen(args, pose_estimator, out_path, benchmark, part):
+def data_gen(args, pose_estimator, out_path, part):
 
     training_subjects = [
         1,
@@ -377,7 +377,7 @@ if __name__ == "__main__":
         "--videos_path",
         type=str,
         # default="/mnt/archive/nh/NTU60_RGB_Videos/nturgb+d_rgb",
-        default="/media/lakpa/Storage/youngdusan_data/youngdusan_video_data/big_wind",
+        default="/media/lakpa/Storage/youngdusan_data/test/big_wind",
         help="path to video files",
     )
     parser.add_argument(
@@ -417,13 +417,13 @@ if __name__ == "__main__":
     if onnx:
         pose_estimator.optimize()
 
-    benchmark = ["xview", "xsub"]
+    # benchmark = ["xview", "xsub"]
     part = ["train", "val"]
 
-    for b in benchmark:
-        for p in part:
-            out_path = os.path.join(args.out_folder, b)
-            if not os.path.exists(out_path):
-                os.makedirs(out_path)
-            print(b, p)
-            data_gen(args, pose_estimator, out_path, benchmark=b, part=p)
+    # for b in benchmark:
+    for p in part:
+        # out_path = os.path.join(args.out_folder, p)
+        # if not os.path.exists(out_path):
+        #     os.makedirs(out_path)
+        # print(b, p)
+        data_gen(args, pose_estimator, args.out_folder, part=p)
