@@ -19,6 +19,7 @@ import os
 import pickle
 import random
 import shutil
+import pandas as pd
 import time
 from collections import OrderedDict
 from torch.utils.data import DataLoader
@@ -34,19 +35,19 @@ import json
 from urllib.request import urlretrieve
 
 # OpenDR engine imports
-from utils.learners import Learner
-from utils.datasets import ExternalDataset, DatasetIterator
-from utils.data import SkeletonSequence
-from utils.target import Category
-from utils.constants import OPENDR_SERVER_URL
+from inference.utils.learners import Learner
+from inference.utils.datasets import ExternalDataset, DatasetIterator
+from inference.utils.data import SkeletonSequence
+from inference.utils.target import Category
+from inference.utils.constants import OPENDR_SERVER_URL
 
 # OpenDR skeleton_based_action_recognition imports
 from models.stgcn import STGCN
 from models.tagcn import TAGCN
-from models.stbln import STBLN
+# from models.stbln import STBLN
 from src.feeder import Feeder
-from src.ntu_gendata import NTU60_CLASSES
-from src.kinetics_gendata import KINETICS400_CLASSES
+# from src.ntu_gendata import NTU60_CLASSES
+# from src.kinetics_gendata import KINETICS400_CLASSES
 
 
 class SpatioTemporalGCNLearner(Learner):
@@ -148,11 +149,13 @@ class SpatioTemporalGCNLearner(Learner):
                 self.device_ind[0] if type(self.device_ind) is list else self.device_ind
             )
         self.__init_seed(1)
+        self.YGAR_10_CLASSES = pd.read_csv("../datasets/kinetics400_classes.csv", verbose=True, index_col=0).to_dict()["name"]
 
-        if self.dataset_name in ["nturgbd_cv", "nturgbd_cs"]:
-            self.classes_dict = NTU60_CLASSES
-        elif self.dataset_name == "kinetics":
-            self.classes_dict = KINETICS400_CLASSES
+        # if self.dataset_name in ["nturgbd_cv", "nturgbd_cs"]:
+        #     self.classes_dict = NTU60_CLASSES
+        # elif self.dataset_name == "kinetics":
+        #     self.classes_dict = KINETICS400_CLASSES
+        self.classes_dict = self.YGAR_10_CLASSES
 
     def fit(
         self,
@@ -666,17 +669,17 @@ class SpatioTemporalGCNLearner(Learner):
             )
             if self.logging:
                 shutil.copy2(inspect.getfile(TAGCN), self.logging_path)
-        elif self.method_name == "stbln":
-            self.model = STBLN(
-                num_class=self.num_class,
-                num_point=self.num_point,
-                num_person=self.num_person,
-                in_channels=self.in_channels,
-                symmetric=self.stbln_symmetric,
-                cuda_=cuda_,
-            )
-            if self.logging:
-                shutil.copy2(inspect.getfile(STBLN), self.logging_path)
+        # elif self.method_name == "stbln":
+        #     self.model = STBLN(
+        #         num_class=self.num_class,
+        #         num_point=self.num_point,
+        #         num_person=self.num_person,
+        #         in_channels=self.in_channels,
+        #         symmetric=self.stbln_symmetric,
+        #         cuda_=cuda_,
+        # #     )
+        #     if self.logging:
+        #         shutil.copy2(inspect.getfile(STBLN), self.logging_path)
         self.loss = nn.CrossEntropyLoss()
         self.model.to(self.device)
         # print(self.model)
