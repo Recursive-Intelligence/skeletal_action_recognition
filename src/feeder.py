@@ -143,6 +143,7 @@ class Feeder(Dataset):
         if self.skeleton_data_type not in ['joint', 'bone', 'motion']:
             raise ValueError('skeleton_data_type should be a str named: joint or bone or motion')
         # load joint data
+        # We need joint data only, not bone or motion data. So use this to load the data
         if self.use_mmap:
             self.data = np.load(self.data_path, mmap_mode='r')
         else:
