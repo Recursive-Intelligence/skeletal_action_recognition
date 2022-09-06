@@ -61,9 +61,9 @@ class SpatioTemporalGCNLearner(Learner):
         checkpoint_load_iter=0,
         temp_path="temp",
         device="cuda",
-        num_workers=32,
+        num_workers=20,
         epochs=50,
-        experiment_name="stgcn_nturgbd",
+        experiment_name="stgcn_yagr",
         device_ind=[0],
         val_batch_size=256,
         drop_after_epoch=[30, 40],
@@ -71,8 +71,8 @@ class SpatioTemporalGCNLearner(Learner):
         dataset_name="nturgbd_cv",
         num_class=10,
         num_point=18,
-        num_person=2,
-        in_channels=3,
+        num_person=1,
+        in_channels=2,
         graph_type="openpose",
         method_name="stgcn",
         stbln_symmetric=False,
@@ -334,9 +334,7 @@ class SpatioTemporalGCNLearner(Learner):
         for epoch in range(self.start_epoch, self.epochs):
             self.model.train()
             self.__print_log("Training epoch: {}".format(epoch + 1))
-            save_model = ((self.global_step + 1) % self.checkpoint_after_iter == 0) or (
-                epoch + 1 == self.epochs
-            )
+            save_model = (epoch + 1 == self.epochs)
             # save_model = ((epoch + 1) % self.checkpoint_after_iter == 0) or (epoch + 1 == self.epochs)
             loss_value = []
             if self.logging:
@@ -417,7 +415,8 @@ class SpatioTemporalGCNLearner(Learner):
                 self.ort_session = None
                 self.save(path=checkpoints_folder, model_name=checkpoint_name)
             eval_results = self.eval(
-                val_dataset,
+                #TODO: Fix eval dataset
+                self.dataset_path,
                 val_loader=val_loader,
                 epoch=epoch,
                 val_data_filename=val_data_filename,
@@ -443,8 +442,8 @@ class SpatioTemporalGCNLearner(Learner):
         epoch=0,
         silent=False,
         verbose=True,
-        val_data_filename="val_joints.npy",
-        val_labels_filename="val_labels.pkl",
+        val_data_filename="val_data_joint.npy",
+        val_labels_filename="val_label.pkl",
         skeleton_data_type="joint",
         save_score=False,
         wrong_file=None,
@@ -490,7 +489,7 @@ class SpatioTemporalGCNLearner(Learner):
         # load data
         if val_loader is None:
             valdata = self.__prepare_dataset(
-                val_dataset,
+                self.dataset_path,
                 data_filename=val_data_filename,
                 labels_filename=val_labels_filename,
                 skeleton_data_type=skeleton_data_type,
@@ -640,7 +639,8 @@ class SpatioTemporalGCNLearner(Learner):
             data_path=data_path,
             label_path=labels_path,
             random_choose=True,
-            random_move=True
+            random_move=True,
+            window_size=150
         )
         # elif isinstance(dataset, DatasetIterator):
         #     return dataset
