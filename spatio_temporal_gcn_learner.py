@@ -62,7 +62,7 @@ class SpatioTemporalGCNLearner(Learner):
         temp_path="temp",
         device="cuda",
         num_workers=20,
-        epochs=50,
+        epochs=3,
         experiment_name="stgcn_yagr",
         device_ind=[0],
         val_batch_size=256,
@@ -549,7 +549,7 @@ class SpatioTemporalGCNLearner(Learner):
         if accuracy > self.best_acc:
             self.best_acc = accuracy
         if verbose:
-            print("Accuracy: ", accuracy, " model: ", self.experiment_name)
+            print("Epoch", epoch, "Accuracy: ", accuracy, "loss :", loss, " model: ",  self.experiment_name)
         if self.model_train_state and self.logging:
             self.val_writer.add_scalar("loss", loss, self.global_step)
             self.val_writer.add_scalar("loss_l1", l1, self.global_step)
