@@ -15,7 +15,7 @@
 from abc import ABC, abstractmethod
 import os
 import numpy as np
-from utils.data import PointCloud
+from inference.utils.data import PointCloud
 
 
 class Dataset(ABC):
