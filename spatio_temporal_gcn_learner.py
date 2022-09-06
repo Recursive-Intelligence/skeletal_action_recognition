@@ -69,11 +69,11 @@ class SpatioTemporalGCNLearner(Learner):
         drop_after_epoch=[30, 40],
         start_epoch=0,
         dataset_name="nturgbd_cv",
-        num_class=60,
-        num_point=25,
+        num_class=10,
+        num_point=18,
         num_person=2,
         in_channels=3,
-        graph_type="ntu",
+        graph_type="openpose",
         method_name="stgcn",
         stbln_symmetric=False,
         num_frames=300,
@@ -149,7 +149,7 @@ class SpatioTemporalGCNLearner(Learner):
                 self.device_ind[0] if type(self.device_ind) is list else self.device_ind
             )
         self.__init_seed(1)
-        self.YGAR_10_CLASSES = pd.read_csv("../datasets/kinetics400_classes.csv", verbose=True, index_col=0).to_dict()["name"]
+        self.YGAR_10_CLASSES = pd.read_csv("datasets/ygar_10classes.csv", verbose=True, index_col=0).to_dict()["name"]
 
         # if self.dataset_name in ["nturgbd_cv", "nturgbd_cs"]:
         #     self.classes_dict = NTU60_CLASSES
@@ -167,10 +167,10 @@ class SpatioTemporalGCNLearner(Learner):
         momentum=0.9,
         nesterov=True,
         weight_decay=0.0001,
-        train_data_filename="train_joints.npy",
-        train_labels_filename="train_labels.pkl",
-        val_data_filename="val_joints.npy",
-        val_labels_filename="val_labels.pkl",
+        train_data_filename="train_data_joint.npy",
+        train_labels_filename="train_label.pkl",
+        val_data_filename="val_data_joint.npy",
+        val_labels_filename="val_label.pkl",
         skeleton_data_type="joint",
     ):
         """
@@ -207,6 +207,7 @@ class SpatioTemporalGCNLearner(Learner):
         self.logging_path = logging_path
         self.global_step = 0
         self.best_acc = 0
+        self.dataset_path = "/media/lakpa/Storage/youngdusan_data/test"
         # Tensorboard logging
         if self.logging_path != "" and self.logging_path is not None:
             self.logging = True
@@ -292,7 +293,7 @@ class SpatioTemporalGCNLearner(Learner):
             )
         # load data
         traindata = self.__prepare_dataset(
-            dataset,
+            self.dataset_path,
             data_filename=train_data_filename,
             labels_filename=train_labels_filename,
             skeleton_data_type=skeleton_data_type,
@@ -310,7 +311,7 @@ class SpatioTemporalGCNLearner(Learner):
         )
 
         valdata = self.__prepare_dataset(
-            val_dataset,
+            self.dataset_path,
             data_filename=val_data_filename,
             labels_filename=val_labels_filename,
             skeleton_data_type=skeleton_data_type,
@@ -575,9 +576,9 @@ class SpatioTemporalGCNLearner(Learner):
 
     def __prepare_dataset(
         self,
-        dataset,
-        data_filename="train_joints.npy",
-        labels_filename="train_labels.pkl",
+        dataset_path,
+        data_filename="data_joint.npy",
+        labels_filename="label.pkl",
         skeleton_data_type="joint",
         phase="train",
         verbose=True,
@@ -602,45 +603,47 @@ class SpatioTemporalGCNLearner(Learner):
         :return: returns Feeder class object or DatasetIterator class object
         :rtype: Feeder class object or DatasetIterator class object
         """
-        if isinstance(dataset, ExternalDataset):
-            if (
-                dataset.dataset_type.lower() != "nturgbd"
-                and dataset.dataset_type.lower() != "kinetics"
-            ):
-                raise UserWarning('dataset_type must be "NTURGBD or Kinetics"')
-            # Get data and labels path
-            data_path = os.path.join(dataset.path, data_filename)
-            labels_path = os.path.join(dataset.path, labels_filename)
-            if phase == "train":
-                if (
-                    dataset.dataset_type.lower() == "nturgbd"
-                    or self.method_name == "tagcn"
-                ):
-                    random_choose = False
-                    random_move = False
-                    window_size = -1
-                elif dataset.dataset_type.lower() == "kinetics":
-                    random_choose = True
-                    random_move = True
-                    window_size = 150
-            else:
-                random_choose = False
-                random_move = False
-                window_size = -1
+        # if isinstance(dataset, ExternalDataset):
+        #     if (
+        #         dataset.dataset_type.lower() != "nturgbd"
+        #         and dataset.dataset_type.lower() != "kinetics"
+        #     ):
+        #         raise UserWarning('dataset_type must be "NTURGBD or Kinetics"')
+        # Get data and labels path
+        # data_path = os.path.join(dataset.path, data_filename)
+        # labels_path = os.path.join(dataset.path, labels_filename)
+        
+        # For our case
+        data_path = os.path.join(dataset_path, data_filename)
+        labels_path = os.path.join(dataset_path, labels_filename)
+        
+        # if phase == "train":
+        #     if (
+        #         dataset.dataset_type.lower() == "nturgbd"
+        #         or self.method_name == "tagcn"
+        #     ):
+        #         random_choose = False
+        #         random_move = False
+        #         window_size = -1
+        #     elif dataset.dataset_type.lower() == "kinetics":
+        #         random_choose = True
+        #         random_move = True
+        #         window_size = 150
+        # else:
+        #     random_choose = False
+        #     random_move = False
+        #     window_size = -1
 
-            if verbose:
-                print("Dataset path is set. Loading feeder...")
-            return Feeder(
-                data_path=data_path,
-                label_path=labels_path,
-                random_choose=random_choose,
-                random_move=random_move,
-                window_size=window_size,
-                skeleton_data_type=skeleton_data_type,
-                data_name=dataset.dataset_type.lower(),
-            )
-        elif isinstance(dataset, DatasetIterator):
-            return dataset
+        # if verbose:
+        #     print("Dataset path is set. Loading feeder...")
+        return Feeder(
+            data_path=data_path,
+            label_path=labels_path,
+            random_choose=True,
+            random_move=True
+        )
+        # elif isinstance(dataset, DatasetIterator):
+        #     return dataset
 
     def init_model(self):
         """Initializes the imported model."""
@@ -1273,3 +1276,10 @@ class SpatioTemporalGCNLearner(Learner):
     def reset(self):
         """This method is not used in this implementation."""
         return NotImplementedError
+
+
+if __name__ == "__main__":
+    dataset = ""
+    val_dataset = ""
+    stgcn = SpatioTemporalGCNLearner()
+    stgcn.fit(dataset, val_dataset,)
