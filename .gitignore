@@ -8,6 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+openpose_default/
 build/
 develop-eggs/
 dist/
