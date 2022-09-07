@@ -1,38 +1,16 @@
-# Copyright 2020-2022 OpenDR European Project
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
-import numpy as np
-import os
-import torch
-import cv2
+import argparse
 import time
-import pandas as pd
 from typing import Dict
 
+import cv2
+import numpy as np
+import pandas as pd
+import torch
 
-# opendr imports
-from spatio_temporal_gcn_learner import SpatioTemporalGCNLearner
-from inference.pose_estimation.lightweight_open_pose.lightweight_open_pose_learner import LightweightOpenPoseLearner
+from inference.pose_estimation.lightweight_open_pose.lightweight_open_pose_learner import \
+    LightweightOpenPoseLearner
 from inference.pose_estimation.lightweight_open_pose.utilities import draw
-import argparse
-import sys
-
-# sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append("../")
-import spatio_temporal_gcn_learner
-# from opendr.perception.skeleton_based_action_recognition import ProgressiveSpatioTemporalGCNLearner
+from spatio_temporal_gcn_learner import SpatioTemporalGCNLearner
 
 
 class VideoReader(object):
@@ -99,7 +77,6 @@ def pose2numpy(args, num_current_frames, poses_list):
             break
     return skeleton_seq
 
-
 def select_2_poses(poses):
     selected_poses = []
     energy = []
@@ -112,12 +89,7 @@ def select_2_poses(poses):
     return selected_poses
 
 
-# NTU60_CLASSES = pd.read_csv("./ntu60_labels.csv", verbose=True, index_col=0).to_dict()[
-#     "name"
-# ]
 YGAR_10_CLASSES = pd.read_csv("datasets/ygar_10classes.csv", verbose=True, index_col=0).to_dict()["name"]
-
-
 
 def preds2label(confidence):
     k = 3
