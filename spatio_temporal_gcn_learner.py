@@ -602,39 +602,11 @@ class SpatioTemporalGCNLearner(Learner):
         :return: returns Feeder class object or DatasetIterator class object
         :rtype: Feeder class object or DatasetIterator class object
         """
-        # if isinstance(dataset, ExternalDataset):
-        #     if (
-        #         dataset.dataset_type.lower() != "nturgbd"
-        #         and dataset.dataset_type.lower() != "kinetics"
-        #     ):
-        #         raise UserWarning('dataset_type must be "NTURGBD or Kinetics"')
-        # Get data and labels path
-        # data_path = os.path.join(dataset.path, data_filename)
-        # labels_path = os.path.join(dataset.path, labels_filename)
         
         # For our case
         data_path = os.path.join(dataset_path, data_filename)
         labels_path = os.path.join(dataset_path, labels_filename)
         
-        # if phase == "train":
-        #     if (
-        #         dataset.dataset_type.lower() == "nturgbd"
-        #         or self.method_name == "tagcn"
-        #     ):
-        #         random_choose = False
-        #         random_move = False
-        #         window_size = -1
-        #     elif dataset.dataset_type.lower() == "kinetics":
-        #         random_choose = True
-        #         random_move = True
-        #         window_size = 150
-        # else:
-        #     random_choose = False
-        #     random_move = False
-        #     window_size = -1
-
-        # if verbose:
-        #     print("Dataset path is set. Loading feeder...")
         return Feeder(
             data_path=data_path,
             label_path=labels_path,
@@ -642,8 +614,6 @@ class SpatioTemporalGCNLearner(Learner):
             random_move=True,
             window_size=150
         )
-        # elif isinstance(dataset, DatasetIterator):
-        #     return dataset
 
     def init_model(self):
         """Initializes the imported model."""
