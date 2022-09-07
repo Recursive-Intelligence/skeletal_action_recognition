@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+from xml.dom import ValidationErr
 import numpy as np
 import os
 import torch
@@ -29,7 +30,7 @@ from pose_estimation import LightweightOpenPoseLearner
 from utils.data import Image
 from utils.target import Pose
 import argparse
-
+import natsort
 from pose_estimation.lightweight_open_pose.filtered_pose import FilteredPose
 from pose_estimation.lightweight_open_pose.utilities import track_poses
 from pose_estimation.lightweight_open_pose.algorithm.modules.keypoints import (
@@ -249,87 +250,10 @@ def select_2_poses(poses):
     selected_poses.append(poses[index])
     return selected_poses
 
-
-def data_gen(args, pose_estimator, out_path, part):
-
-    training_subjects = [
-        1,
-        2,
-        4,
-        5,
-        8,
-        9,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        25,
-        27,
-        28,
-        31,
-        34,
-        35,
-        38,
-    ]
-    training_cameras = [2, 3]
-    class_names = {"crafty_tricks" : 0, "sowing_corn_and_driving_pigeons" : 1, "waves_crashing" : 2, 
-                    "flower_clock" : 3, "wind_that_shakes_trees" : 4, "big_wind" : 5, 
-                    "bokbulbok" : 6, "seaweed_in_the_swell_sea" : 7, "chulong_chulong_phaldo" : 7, 
-                    "chalseok_chalseok_phaldo" : 8}
-    # if args.ignored_sample_path is not None:
-    #     with open(args.ignored_sample_path, "r") as f:
-    #         ignored_samples = [line.strip() + ".avi" for line in f.readlines()]
-    # else:
-    #     ignored_samples = []
-
-    sample_names = []
-    sample_labels = []
-    for filename in os.listdir(args.videos_path):
-        # if filename in ignored_samples:
-        # TODO: Change action class name extraction method
-        #     continue
-        # action_class = int(filename[filename.find("A") + 1 : filename.find("A") + 4])
-        action_class = ("_").join((filename.split(".")[0]).split("_")[:-1])
-        # subject_id = int(filename[filename.find("P") + 1 : filename.find("P") + 4])
-        # camera_id = int(filename[filename.find("C") + 1 : filename.find("C") + 4])
-
-        # if benchmark == "xview":
-        #     istraining = camera_id in training_cameras
-        # elif benchmark == "xsub":
-        #     istraining = subject_id in training_subjects
-        # else:
-        #     raise ValueError()
-
-        # if part == "train":
-        #     issample = istraining
-        # elif part == "val":
-        #     issample = not istraining
-        # else:
-        #     raise ValueError()
-
-        # if issample:
-        sample_name = (filename.split("."))[0]
-        sample_names.append(sample_name)
-        
-        categorical_sample_names = []
-        for sample_name in sample_names:
-            for classname in sorted(list(class_names.keys())):
-                if classname == action_class:
-                    categorical_sample_name = sample_name.replace(sample_name, str(class_names[action_class]))
-                    categorical_sample_names.append(int(categorical_sample_name))
-                    
-        # sample_labels.append(action_class)
-
-    with open("{}/{}_label.pkl".format(out_path, part), "wb") as f:
-        pickle.dump((sample_names, list(categorical_sample_names)), f)
-
+def save_data(sample_names, out_path, part):
     skeleton_data = np.zeros(
-        (len(categorical_sample_names), args.num_channels, 300, 18, 1), dtype=np.float32
+        (len(sample_names), args.num_channels, 300, 18, 1), dtype=np.float32
     )
-
     for i, s in enumerate(tqdm(sample_names)):
         video_path = os.path.join(args.videos_path, s + ".mov")
         image_provider = VideoReader(video_path)
@@ -359,6 +283,51 @@ def data_gen(args, pose_estimator, out_path, part):
             skeleton_data[i, :, :, :, :] = skeleton_seq
 
     np.save("{}/{}_data_joint.npy".format(out_path, part), skeleton_data)
+    
+def save_labels(sample_names, class_names, action_class, out_path, part):
+    sample_labels = []
+    for sample_name in sample_names:
+        for classname in sorted(list(class_names.keys())):
+            if classname == action_class:
+                categorical_sample_name = sample_name.replace(sample_name, str(class_names[action_class]))
+                sample_labels.append(int(categorical_sample_name))
+        
+    with open("{}/{}_label.pkl".format(out_path, part), "wb") as f:
+        pickle.dump((sample_names, list(sample_labels)), f)
+            
+def data_gen(args, pose_estimator, out_path):
+
+    training_subjects = [i for i in range(1, 301)]
+    class_names = {"crafty_tricks" : 0, "sowing_corn_and_driving_pigeons" : 1, "waves_crashing" : 2, 
+                    "flower_clock" : 3, "wind_that_shakes_trees" : 4, "big_wind" : 5, 
+                    "bokbulbok" : 6, "seaweed_in_the_swell_sea" : 7, "chulong_chulong_phaldo" : 7, 
+                    "chalseok_chalseok_phaldo" : 8}
+
+    sample_nums = []
+    train_sample_names = []
+    val_sample_names = []
+    
+    files = natsort.natsorted(os.listdir(args.videos_path))
+    for file in files:
+        # if file in ignored_samples:
+        # TODO: Change action class name extraction method
+        #     continue
+        # action_class = int(file[file.find("A") + 1 : file.find("A") + 4])
+        action_class = ("_").join((file.split(".")[0]).split("_")[:-1])
+        sample_name = (file.split("."))[0]
+        filenum = int(("_").join((file.split(".")[0]).split("_")[-1]))
+        sample_nums.append(filenum)
+
+        istraining = filenum in training_subjects
+        if istraining:
+            train_sample_names.append(sample_name)
+        else:
+            val_sample_names.append(sample_name)
+
+    save_data(train_sample_names, out_path, "train")
+    save_data(val_sample_names, out_path, "val")
+    save_labels(train_sample_names, class_names, action_class, out_path, "train")
+    save_labels(val_sample_names, class_names, action_class, out_path, "val")
 
 
 if __name__ == "__main__":
@@ -418,12 +387,12 @@ if __name__ == "__main__":
         pose_estimator.optimize()
 
     # benchmark = ["xview", "xsub"]
-    part = ["train", "val"]
+    # part = ["train", "val"]
 
     # for b in benchmark:
-    for p in part:
+    # for p in part:
         # out_path = os.path.join(args.out_folder, p)
         # if not os.path.exists(out_path):
         #     os.makedirs(out_path)
         # print(b, p)
-        data_gen(args, pose_estimator, args.out_folder, part=p)
+    data_gen(args, pose_estimator, args.out_folder)
