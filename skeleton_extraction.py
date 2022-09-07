@@ -13,34 +13,27 @@
 # limitations under the License.
 
 
-from xml.dom import ValidationErr
-import numpy as np
+import argparse
 import os
-import torch
-import cv2
 import pickle
+
+import cv2
+import natsort
+import numpy as np
+import torch
 from tqdm import tqdm
-import sys
-# opendr imports
-# print(sys.path)
-# sys.path.insert(1, "../")
-# # os.chdir("..")
-# print(sys.path)
+
 from inference.pose_estimation import LightweightOpenPoseLearner
+from inference.pose_estimation.lightweight_open_pose.algorithm.modules.keypoints import (
+    extract_keypoints, group_keypoints)
+from inference.pose_estimation.lightweight_open_pose.algorithm.val import (
+    normalize, pad_width)
+from inference.pose_estimation.lightweight_open_pose.filtered_pose import \
+    FilteredPose
+from inference.pose_estimation.lightweight_open_pose.utilities import \
+    track_poses
 from inference.utils.data import Image
 from inference.utils.target import Pose
-import argparse
-import natsort
-from inference.pose_estimation.lightweight_open_pose.filtered_pose import FilteredPose
-from inference.pose_estimation.lightweight_open_pose.utilities import track_poses
-from inference.pose_estimation.lightweight_open_pose.algorithm.modules.keypoints import (
-    extract_keypoints,
-    group_keypoints,
-)
-from inference.pose_estimation.lightweight_open_pose.algorithm.val import (
-    normalize,
-    pad_width,
-)
 
 
 class VideoReader(object):
@@ -297,7 +290,7 @@ def save_labels(sample_names, class_names, action_class, out_path, part):
             
 def data_gen(args, pose_estimator, out_path):
 
-    training_subjects = [i for i in range(1, 7)]
+    training_subjects = [i for i in range(1, 301)]
     class_names = {"crafty_tricks" : 0, "sowing_corn_and_driving_pigeons" : 1, "waves_crashing" : 2, 
                     "flower_clock" : 3, "wind_that_shakes_trees" : 4, "big_wind" : 5, 
                     "bokbulbok" : 6, "seaweed_in_the_swell_sea" : 7, "chulong_chulong_phaldo" : 7, 
@@ -309,10 +302,6 @@ def data_gen(args, pose_estimator, out_path):
     
     files = natsort.natsorted(os.listdir(args.videos_path))
     for file in files:
-        # if file in ignored_samples:
-        # TODO: Change action class name extraction method
-        #     continue
-        # action_class = int(file[file.find("A") + 1 : file.find("A") + 4])
         action_class = ("_").join((file.split(".")[0]).split("_")[:-1])
         sample_name = (file.split("."))[0]
         filenum = int(("_").join((file.split(".")[0]).split("_")[-1]))
@@ -345,20 +334,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--videos_path",
         type=str,
-        # default="/mnt/archive/nh/NTU60_RGB_Videos/nturgb+d_rgb",
-        default="/media/lakpa/Storage/youngdusan_data/test/big_wind",
+        default="/media/lakpa/Storage/youngdusan_data/youngdusan_all_video_data",
         help="path to video files",
     )
     parser.add_argument(
         "--num_channels", help="number of channels for each keypoint", default=2
     )
     parser.add_argument(
-        "--ignored_sample_path", default="./samples_with_missing_skeletons.txt"
-    )
-    parser.add_argument(
         "--out_folder",
-        # default="/mnt/archive/nh/NTU60_Skeletons_LightweightOpenPose/2dSkeletons",
-        default="/media/lakpa/Storage/youngdusan_data/test",
+        default="/media/lakpa/Storage/youngdusan_data/gcn_data",
     )
     args = parser.parse_args()
 
@@ -372,7 +356,7 @@ if __name__ == "__main__":
         stages = 2
         half_precision = False
 
-    # pose estimator
+    # Run pose estimator
     pose_estimator = LightweightOpenPoseLearner(
         device=device,
         num_refinement_stages=stages,
@@ -386,13 +370,6 @@ if __name__ == "__main__":
     if onnx:
         pose_estimator.optimize()
 
-    # benchmark = ["xview", "xsub"]
-    # part = ["train", "val"]
-
-    # for b in benchmark:
-    # for p in part:
-        # out_path = os.path.join(args.out_folder, p)
-        # if not os.path.exists(out_path):
-        #     os.makedirs(out_path)
-        # print(b, p)
+    if not os.path.exists(args.out_folder):
+        os.makedirs(args.out_folder)
     data_gen(args, pose_estimator, args.out_folder)
