@@ -62,7 +62,7 @@ class SpatioTemporalGCNLearner(Learner):
         temp_path="temp",
         device="cuda",
         num_workers=20,
-        epochs=3,
+        epochs=45,
         experiment_name="stgcn_yagr",
         device_ind=[0],
         val_batch_size=256,
@@ -207,7 +207,7 @@ class SpatioTemporalGCNLearner(Learner):
         self.logging_path = logging_path
         self.global_step = 0
         self.best_acc = 0
-        self.dataset_path = "/media/lakpa/Storage/youngdusan_data/test"
+        self.dataset_path = "/media/lakpa/Storage/youngdusan_data/gcn_data"
         # Tensorboard logging
         if self.logging_path != "" and self.logging_path is not None:
             self.logging = True

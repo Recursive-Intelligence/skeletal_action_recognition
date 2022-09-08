@@ -126,7 +126,7 @@ if __name__ == "__main__":
         default=False,
         action="store_true",
     )
-    parser.add_argument("--video", default="/media/lakpa/Storage/youngdusan_data/youngdusan_video_data/big_wind/big_wind_8.mov", help="path to video file or camera id")
+    parser.add_argument("--video", default="/media/lakpa/Storage/youngdusan_data/test_video/videoplayback.mp4", help="path to video file or camera id")
     parser.add_argument(
         "--method", type=str, default="stgcn", help="action detection method"
     )
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     # )
     model_saved_path = "./temp/stgcn_yagr_checkpoints"
     # action_classifier.load(model_saved_path, args.action_checkpoint_name)
-    action_classifier.load(model_saved_path, "stgcn_yagr-2-0")
+    action_classifier.load(model_saved_path, "stgcn_yagr-44-945")
 
     # Optimization
     if onnx:
