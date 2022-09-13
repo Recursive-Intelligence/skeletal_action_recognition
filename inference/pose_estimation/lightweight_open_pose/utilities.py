@@ -28,7 +28,7 @@ sigmas = np.array([.26, .79, .79, .72, .62, .79, .72, .62, 1.07, .87, .89, 1.07,
                   dtype=np.float32) / 10.0
 vars_ = (sigmas * 2) ** 2
 last_id = -1
-color = [0, 224, 255]
+color = [255, 0, 0]
 
 
 def get_bbox(pose):
