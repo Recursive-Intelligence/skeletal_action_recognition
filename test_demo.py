@@ -52,8 +52,9 @@ def pose2numpy(num_current_frames, poses_list):
     data_numpy = np.zeros((1, C, num_current_frames, V, M))
     skeleton_seq = np.zeros((1, C, T, V, M))
     for t in range(num_current_frames):
-        for m in range(len(poses_list[t])):
-            data_numpy[0, 0:2, t, :, m] = np.transpose(poses_list[t][m].data)
+        # for m in range(len(poses_list[t])):
+        m = 0 # Only predicted single pose
+        data_numpy[0, 0:2, t, :, m] = np.transpose(poses_list[t][m].data)
 
     # if we have less than num_frames, repeat frames to reach num_frames
     diff = T - num_current_frames
@@ -75,7 +76,7 @@ def pose2numpy(num_current_frames, poses_list):
     return skeleton_seq
 
 pose_estimator = LightweightOpenPoseLearner()
-pose_estimator.download(path=".", verbose=True)
+# pose_estimator.download(path=".", verbose=True)
 pose_estimator.load("openpose_default")
 
 action_classifier = SpatioTemporalGCNLearner(
@@ -90,38 +91,45 @@ model_saved_path = "./temp/stgcn_yagr_checkpoints"
 action_classifier.load(model_saved_path, "stgcn_yagr-44-945")
       
 # path = "/media/lakpa/Storage/youngdusan_data/test_video/videoplayback.mp4"
-path = "/media/lakpa/Storage/youngdusan_data/youngdusan_video_data/wind_that_shakes_trees/wind_that_shakes_trees_235.mov"
+path = "/media/lakpa/Storage/youngdusan_data/test_video/videoplayback.mp4"
 image_provider = VideoReader(path)  # loading a video or get the camera id 0
 
+YGAR_10_CLASSES = pd.read_csv("datasets/ygar_10classes.csv", verbose=True, index_col=0).to_dict()["name"]
 
-f_ind = 0
-counter = 0
-poses_list = []
-for img in image_provider:
-    start_time = time.perf_counter()
-    poses = pose_estimator.infer(img)
-    
-    for pose in poses:
-        draw(img, pose)
+def prediction():
+    f_ind = 0
+    counter = 0
+    poses_list = []
+    for img in image_provider:
+        start_time = time.perf_counter()
+        poses = pose_estimator.infer(img)
         
-    if len(poses) > 0:
-        counter += 1
-        poses_list.append(poses)
+        for pose in poses:
+            draw(img, pose)
+            
+        if len(poses) > 0:
+            counter += 1
+            poses_list.append(poses)
 
-    if counter > 300:
-        poses_list.pop(0)
-        counter = 300
+        if counter > 300:
+            poses_list.pop(0)
+            counter = 300
 
-    if counter > 0:
-        skeleton_seq = pose2numpy(counter, poses_list)
+        if counter > 0:
+            skeleton_seq = pose2numpy(counter, poses_list)
+            prediction = action_classifier.infer(skeleton_seq)
+        # print(prediction)
+        # predicted_label = torch.argmax(prediction.confidence)
+        
+        # predicted_class = YGAR_10_CLASSES[predicted_label.item()]
+        end_time = time.perf_counter()
+        fps = 1.0 / (end_time - start_time)
+        avg_fps = 0.8 * fps + 0.2 * fps
+        img = cv2.putText(img,"FPS: %.2f" % (avg_fps,),(100, 160),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
+        # img = cv2.putText(img, predicted_class,(50, 100),cv2.FONT_HERSHEY_SIMPLEX,1,(0, 0, 0),2)
+        cv2.imshow("Result", img)
+        key = cv2.waitKey(1)
+        if key == ord("q"):
+            break
 
-        prediction = action_classifier.infer(skeleton_seq)
-    
-    end_time = time.perf_counter()
-    fps = 1.0 / (end_time - start_time)
-    avg_fps = 0.8 * fps + 0.2 * fps
-    img = cv2.putText(img,"FPS: %.2f" % (avg_fps,),(10, 160),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
-    cv2.imshow("Result", img)
-    key = cv2.waitKey(1)
-    if key == ord("q"):
-        break
+prediction()
