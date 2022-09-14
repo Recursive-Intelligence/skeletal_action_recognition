@@ -91,7 +91,7 @@ def prepare_poses(frames, sequence):
     return data_numpy
 
 def preds2label(confidence):
-    k = 3
+    k = 2
     class_scores, class_inds = torch.topk(confidence, k=k)
     labels = {
         YGAR_10_CLASSES[int(class_inds[j])]: float(class_scores[j].item())
@@ -123,9 +123,9 @@ action_classifier = SpatioTemporalGCNLearner(
 )
 
 
-model_saved_path = "./temp/stgcn_yagr_checkpoints"
+model_saved_path = "./temp/yagr_checkpoints"
 # action_classifier.load(model_saved_path, args.action_checkpoint_name)
-action_classifier.load(model_saved_path, "stgcn_yagr-44-180")
+action_classifier.load(model_saved_path, "yagr-44-180")
       
 path = "/media/lakpa/Storage/youngdusan_data/test_video/videoplayback.mp4"
 # path = "/media/lakpa/Storage/youngdusan_data/youngdusan_video_data/bokbulbok/bokbulbok_500.mov"
@@ -134,11 +134,58 @@ image_provider = VideoReader(path)  # loading a video or get the camera id 0
 
 # YGAR_10_CLASSES = pd.read_csv("datasets/ygar_10classes.csv", verbose=True, index_col=0).to_dict()["name"]
 YGAR_10_CLASSES = {0 : "bokbulbok", 1: "waves_crashing"}
+
+# def prediction(frames):
+#     f_ind = 0
+#     counter = 0
+#     poses_list = []
+#     predictions = []
+#     for img in image_provider:
+#         start_time = time.perf_counter()
+#         poses = pose_estimator.infer(img)
+        
+#         for pose in poses:
+#             draw(img, pose)
+            
+#         if len(poses) > 0:
+#             counter += 1
+#             poses_list.append(poses)
+
+#             if counter > frames:
+#                 poses_list.pop(0)
+#                 counter = frames
+            
+#             sequence = poses_list[-frames:]
+#             if len(sequence) == frames:
+#                 skeleton_seq = prepare_poses(frames, sequence)
+#                 # for pose in sequence:
+#                 # skeleton_seq = pose2numpy(counter, frames, pose)
+#                 prediction = action_classifier.infer(skeleton_seq)
+#                 # category_labels = preds2label(prediction.confidence)
+#                 # draw_preds(img, category_labels)
+#                 # print(category_labels)
+#                 predicted_label = torch.argmax(prediction.confidence)
+#                 predictions.append(predicted_label.item())
+                
+#                 unique_pred = np.unique(predictions[-30:])[0] 
+                
+#                 if unique_pred == predicted_label.item():
+#                     print(unique_pred)                    
+#                     predicted_class = YGAR_10_CLASSES[unique_pred]
+#                     end_time = time.perf_counter()
+#                     fps = 1.0 / (end_time - start_time)
+#                     avg_fps = 0.8 * fps + 0.2 * fps
+#                     img = cv2.putText(img,"FPS: %.2f" % (avg_fps,),(100, 160),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
+#                     img = cv2.putText(img, predicted_class,(10, 100),cv2.FONT_HERSHEY_SIMPLEX,1,(0, 0, 0),1)
+#                     cv2.imshow("Result", img)
+#             key = cv2.waitKey(1)
+#             if key == ord("q"):
+#                 break
+
 def prediction(frames):
     f_ind = 0
     counter = 0
     poses_list = []
-    predictions = []
     for img in image_provider:
         start_time = time.perf_counter()
         poses = pose_estimator.infer(img)
@@ -150,35 +197,31 @@ def prediction(frames):
             counter += 1
             poses_list.append(poses)
 
-            if counter > frames:
-                poses_list.pop(0)
-                counter = frames
-            
-            sequence = poses_list[-frames:]
-            if len(sequence) == frames:
-                skeleton_seq = prepare_poses(frames, sequence)
-                # for pose in sequence:
-                # skeleton_seq = pose2numpy(counter, frames, pose)
-                prediction = action_classifier.infer(skeleton_seq)
-                # category_labels = preds2label(prediction.confidence)
-                # draw_preds(img, category_labels)
-                # print(category_labels)
-                predicted_label = torch.argmax(prediction.confidence)
-                predictions.append(predicted_label.item())
-                
-                unique_pred = np.unique(predictions[-30:])[0] 
-                
-                if unique_pred == predicted_label.item():
-                    print(unique_pred)                    
-                    predicted_class = YGAR_10_CLASSES[unique_pred]
-                    end_time = time.perf_counter()
-                    fps = 1.0 / (end_time - start_time)
-                    avg_fps = 0.8 * fps + 0.2 * fps
-                    img = cv2.putText(img,"FPS: %.2f" % (avg_fps,),(100, 160),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
-                    img = cv2.putText(img, predicted_class,(10, 100),cv2.FONT_HERSHEY_SIMPLEX,1,(0, 0, 0),1)
-                    cv2.imshow("Result", img)
-            key = cv2.waitKey(1)
-            if key == ord("q"):
-                break
+        if counter > 300:
+            poses_list.pop(0)
+            counter = 300
 
+        if counter > 0:
+            skeleton_seq = pose2numpy(counter, frames, poses_list)
+
+            prediction = action_classifier.infer(skeleton_seq)
+            category_labels = preds2label(prediction.confidence)
+            print(category_labels)
+            draw_preds(img, category_labels)
+
+        # # print(prediction)
+        # predicted_label = torch.argmax(prediction.confidence)
+        
+        # predicted_class = YGAR_10_CLASSES[predicted_label.item()]
+        end_time = time.perf_counter()
+        fps = 1.0 / (end_time - start_time)
+        avg_fps = 0.8 * fps + 0.2 * fps
+        img = cv2.putText(img,"FPS: %.2f" % (avg_fps,),(100, 160),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
+        # img = cv2.putText(img, predicted_class,(50, 100),cv2.FONT_HERSHEY_SIMPLEX,1,(0, 0, 0),2)
+        cv2.imshow("Result", img)
+        key = cv2.waitKey(1)
+        if key == ord("q"):
+            break
+
+# prediction(frames = 60)
 prediction(frames = 60)
