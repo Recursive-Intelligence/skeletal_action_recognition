@@ -243,9 +243,9 @@ def select_2_poses(poses):
     selected_poses.append(poses[index])
     return selected_poses
 
-def save_data(sample_names, out_path, part):
+def save_data(sample_names, total_frames, pose_estimator, out_path, part):
     skeleton_data = np.zeros(
-        (len(sample_names), args.num_channels, 300, 18, 1), dtype=np.float32
+        (len(sample_names), args.num_channels, total_frames, 18, 1), dtype=np.float32
     )
     for i, s in enumerate(tqdm(sample_names)):
         video_path = os.path.join(args.videos_path, s + ".mov")
@@ -264,11 +264,11 @@ def save_data(sample_names, out_path, part):
                 counter += 1
                 poses_list.append(poses)
                 kptscores_list.append(kptscores)
-        if counter > 300:
-            for cnt in range(counter - 300):
+        if counter > total_frames:
+            for cnt in range(counter - total_frames):
                 poses_list.pop(0)
                 kptscores_list.pop(0)
-            counter = 300
+            counter = total_frames
         if counter > 0:
             skeleton_seq = pose2numpy(
                 counter, poses_list, kptscores_list, args.num_channels
@@ -288,7 +288,7 @@ def save_labels(sample_names, class_names, action_class, out_path, part):
     with open("{}/{}_label.pkl".format(out_path, part), "wb") as f:
         pickle.dump((sample_names, list(sample_labels)), f)
             
-def data_gen(args, pose_estimator, out_path):
+def data_gen(args, total_frames, pose_estimator, out_path):
 
     training_subjects = [i for i in range(1, 301)]
     class_names = {"crafty_tricks" : 0, "sowing_corn_and_driving_pigeons" : 1, "waves_crashing" : 2, 
@@ -313,8 +313,8 @@ def data_gen(args, pose_estimator, out_path):
         else:
             val_sample_names.append(sample_name)
 
-    save_data(train_sample_names, out_path, "train")
-    save_data(val_sample_names, out_path, "val")
+    save_data(train_sample_names, total_frames,pose_estimator, out_path, "train")
+    save_data(val_sample_names, total_frames, pose_estimator, out_path, "val")
     save_labels(train_sample_names, class_names, action_class, out_path, "train")
     save_labels(val_sample_names, class_names, action_class, out_path, "val")
 
@@ -357,12 +357,13 @@ if __name__ == "__main__":
         half_precision = False
 
     # Run pose estimator
-    pose_estimator = LightweightOpenPoseLearner(
-        device=device,
-        num_refinement_stages=stages,
-        mobilenet_use_stride=stride,
-        half_precision=half_precision,
-    )
+    # pose_estimator = LightweightOpenPoseLearner(
+    #     device=device,
+    #     num_refinement_stages=stages,
+    #     mobilenet_use_stride=stride,
+    #     half_precision=half_precision,
+    # )
+    pose_estimator = LightweightOpenPoseLearner()
     pose_estimator.download(path=".", verbose=True)
     pose_estimator.load("openpose_default")
 
@@ -372,4 +373,5 @@ if __name__ == "__main__":
 
     if not os.path.exists(args.out_folder):
         os.makedirs(args.out_folder)
-    data_gen(args, pose_estimator, args.out_folder)
+    total_frames = 60
+    data_gen(args, total_frames, pose_estimator, args.out_folder)
