@@ -53,9 +53,9 @@ from src.feeder import Feeder
 class SpatioTemporalGCNLearner(Learner):
     def __init__(
         self,
-        lr=1e-1,
-        batch_size=128,
-        optimizer_name="sgd",
+        lr=1e-2,
+        batch_size=32,
+        optimizer_name="adam",
         lr_schedule="",
         checkpoint_after_iter=0,
         checkpoint_load_iter=0,
@@ -63,21 +63,21 @@ class SpatioTemporalGCNLearner(Learner):
         device="cuda",
         num_workers=20,
         epochs=45,
-        experiment_name="stgcn_yagr",
+        experiment_name="yagr",
         device_ind=[0],
-        val_batch_size=256,
+        val_batch_size=32,
         drop_after_epoch=[30, 40],
         start_epoch=0,
         dataset_name="nturgbd_cv",
-        num_class=10,
+        num_class=4,
         num_point=18,
         num_person=1,
         in_channels=2,
         graph_type="openpose",
         method_name="stgcn",
         stbln_symmetric=False,
-        num_frames=300,
-        num_subframes=100,
+        num_frames=150,  #original 300
+        num_subframes=100,   #original 100
     ):
         super(SpatioTemporalGCNLearner, self).__init__(
             lr=lr,
@@ -149,8 +149,8 @@ class SpatioTemporalGCNLearner(Learner):
                 self.device_ind[0] if type(self.device_ind) is list else self.device_ind
             )
         self.__init_seed(1)
-        self.YGAR_10_CLASSES = pd.read_csv("datasets/ygar_10classes.csv", verbose=True, index_col=0).to_dict()["name"]
-
+        # self.YGAR_10_CLASSES = pd.read_csv("datasets/ygar_10classes.csv", verbose=True, index_col=0).to_dict()["name"]
+        self.YGAR_10_CLASSES = {0 : "bokbulbok", 1: "sowing_corn_and_driving_pigeons", 2: "waves_crashing", 3 : "wind_that_shakes_trees"}
         # if self.dataset_name in ["nturgbd_cv", "nturgbd_cs"]:
         #     self.classes_dict = NTU60_CLASSES
         # elif self.dataset_name == "kinetics":
@@ -166,7 +166,7 @@ class SpatioTemporalGCNLearner(Learner):
         verbose=True,
         momentum=0.9,
         nesterov=True,
-        weight_decay=0.0001,
+        weight_decay=0.001,
         train_data_filename="train_data_joint.npy",
         train_labels_filename="train_label.pkl",
         val_data_filename="val_data_joint.npy",
@@ -695,6 +695,7 @@ class SpatioTemporalGCNLearner(Learner):
             output, l1 = output
         else:
             output = output
+        # output = self.model(SkeletonSeq_batch)
 
         m = nn.Softmax(dim=0)
         softmax_predictions = m(output.data[0])

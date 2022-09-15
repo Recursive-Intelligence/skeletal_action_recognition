@@ -78,7 +78,7 @@ class LightweightOpenPoseLearner(Learner):
         epochs=280,
         batch_size=80,
         device="cuda",
-        backbone="shufflenet",
+        backbone="mobilenet",
         lr_schedule="",
         temp_path="temp",
         checkpoint_after_iter=5000,

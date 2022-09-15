@@ -200,9 +200,9 @@ def tile(a, dim, n_tile):
     return tiled_a.numpy()
 
 
-def pose2numpy(num_frames, poses_list, kptscores_list, num_channels=3):
+def pose2numpy(num_frames, total_frames, poses_list, kptscores_list, num_channels=3):
     C = num_channels
-    T = 300
+    T = total_frames
     V = 18
     M = 1  # num_person_in
     
@@ -271,30 +271,38 @@ def save_data(sample_names, total_frames, pose_estimator, out_path, part):
             counter = total_frames
         if counter > 0:
             skeleton_seq = pose2numpy(
-                counter, poses_list, kptscores_list, args.num_channels
+                counter, total_frames, poses_list, kptscores_list, args.num_channels
             )
             skeleton_data[i, :, :, :, :] = skeleton_seq
 
     np.save("{}/{}_data_joint.npy".format(out_path, part), skeleton_data)
     
-def save_labels(sample_names, class_names, action_class, out_path, part):
+def save_labels(sample_names, class_names, out_path, part):
     sample_labels = []
+    classnames = sorted(list(class_names.keys()))
     for sample_name in sample_names:
-        for classname in sorted(list(class_names.keys())):
-            if classname == action_class:
-                categorical_sample_name = sample_name.replace(sample_name, str(class_names[action_class]))
-                sample_labels.append(int(categorical_sample_name))
+        actioname = ("_").join(sample_name.split("_")[:-1])
         
+        for classname in classnames:
+            if classname == actioname:
+                new_label_name = sample_name.replace(sample_name, str(class_names[actioname]))
+        
+        # for classname in sorted(list(class_names.keys())):
+        #     if classname == action_class:
+        #         categorical_sample_name = sample_name.replace(sample_name, str(class_names[action_class]))
+                sample_labels.append(int(new_label_name))
+    # print(set(sample_labels))
     with open("{}/{}_label.pkl".format(out_path, part), "wb") as f:
         pickle.dump((sample_names, list(sample_labels)), f)
             
 def data_gen(args, total_frames, pose_estimator, out_path):
 
     training_subjects = [i for i in range(1, 301)]
-    class_names = {"crafty_tricks" : 0, "sowing_corn_and_driving_pigeons" : 1, "waves_crashing" : 2, 
-                    "flower_clock" : 3, "wind_that_shakes_trees" : 4, "big_wind" : 5, 
-                    "bokbulbok" : 6, "seaweed_in_the_swell_sea" : 7, "chulong_chulong_phaldo" : 7, 
-                    "chalseok_chalseok_phaldo" : 8}
+    # class_names = {"crafty_tricks" : 0, "sowing_corn_and_driving_pigeons" : 1, "waves_crashing" : 2, 
+    #                 "flower_clock" : 3, "wind_that_shakes_trees" : 4, "big_wind" : 5, 
+    #                 "bokbulbok" : 6, "seaweed_in_the_swell_sea" : 7, "chulong_chulong_phaldo" : 8, 
+    #                 "chalseok_chalseok_phaldo" : 9}
+    class_names = {"bokbulbok" : 0, "waves_crashing" : 1, "wind_that_shakes_trees" : 2, "sowing_corn_and_driving_pigeons" : 3}
 
     sample_nums = []
     train_sample_names = []
@@ -315,8 +323,8 @@ def data_gen(args, total_frames, pose_estimator, out_path):
 
     save_data(train_sample_names, total_frames,pose_estimator, out_path, "train")
     save_data(val_sample_names, total_frames, pose_estimator, out_path, "val")
-    save_labels(train_sample_names, class_names, action_class, out_path, "train")
-    save_labels(val_sample_names, class_names, action_class, out_path, "val")
+    save_labels(train_sample_names, class_names, out_path, "train")
+    save_labels(val_sample_names, class_names, out_path, "val")
 
 
 if __name__ == "__main__":
@@ -334,7 +342,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--videos_path",
         type=str,
-        default="/media/lakpa/Storage/youngdusan_data/youngdusan_all_video_data",
+        default="/media/lakpa/Storage/youngdusan_data/youngdusan_2_classes",
         help="path to video files",
     )
     parser.add_argument(
@@ -373,5 +381,5 @@ if __name__ == "__main__":
 
     if not os.path.exists(args.out_folder):
         os.makedirs(args.out_folder)
-    total_frames = 60
+    total_frames = 300
     data_gen(args, total_frames, pose_estimator, args.out_folder)
