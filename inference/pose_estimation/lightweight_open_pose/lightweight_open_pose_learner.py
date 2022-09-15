@@ -35,37 +35,37 @@ from pathlib import Path
 # print(path + "/")
 # sys.path.insert(0, path+ "/")
 # OpenDR engine imports
-from utils.learners import Learner
-from utils.datasets import ExternalDataset, DatasetIterator
-from utils.data import Image
-from utils.target import Pose
-from utils.constants import OPENDR_SERVER_URL
+from inference.utils.learners import Learner
+from inference.utils.datasets import ExternalDataset, DatasetIterator
+from inference.utils.data import Image
+from inference.utils.target import Pose
+from inference.utils.constants import OPENDR_SERVER_URL
 
 # OpenDR lightweight_open_pose imports
-from pose_estimation.lightweight_open_pose.filtered_pose import FilteredPose
-from pose_estimation.lightweight_open_pose.utilities import track_poses
-from pose_estimation.lightweight_open_pose.algorithm.models.with_mobilenet import PoseEstimationWithMobileNet
-from pose_estimation.lightweight_open_pose.algorithm.models.with_mobilenet_v2 import PoseEstimationWithMobileNetV2
-from pose_estimation.lightweight_open_pose.algorithm.models.with_shufflenet import PoseEstimationWithShuffleNet
-from pose_estimation.lightweight_open_pose.algorithm.modules.get_parameters import (
+from inference.pose_estimation.lightweight_open_pose.filtered_pose import FilteredPose
+from inference.pose_estimation.lightweight_open_pose.utilities import track_poses
+from inference.pose_estimation.lightweight_open_pose.algorithm.models.with_mobilenet import PoseEstimationWithMobileNet
+from inference.pose_estimation.lightweight_open_pose.algorithm.models.with_mobilenet_v2 import PoseEstimationWithMobileNetV2
+from inference.pose_estimation.lightweight_open_pose.algorithm.models.with_shufflenet import PoseEstimationWithShuffleNet
+from inference.pose_estimation.lightweight_open_pose.algorithm.modules.get_parameters import (
     get_parameters_conv,
     get_parameters_bn,
     get_parameters_conv_depthwise,
 )
-from pose_estimation.lightweight_open_pose.algorithm.modules.load_state import load_state  # , load_from_mobilenet
-from pose_estimation.lightweight_open_pose.algorithm.modules.loss import l2_loss
-from pose_estimation.lightweight_open_pose.algorithm.modules.keypoints import extract_keypoints, group_keypoints
-from pose_estimation.lightweight_open_pose.algorithm.datasets.coco import CocoTrainDataset
-from pose_estimation.lightweight_open_pose.algorithm.datasets.coco import CocoValDataset
-from pose_estimation.lightweight_open_pose.algorithm.datasets.transformations import (
+from inference.pose_estimation.lightweight_open_pose.algorithm.modules.load_state import load_state  # , load_from_mobilenet
+from inference.pose_estimation.lightweight_open_pose.algorithm.modules.loss import l2_loss
+from inference.pose_estimation.lightweight_open_pose.algorithm.modules.keypoints import extract_keypoints, group_keypoints
+from inference.pose_estimation.lightweight_open_pose.algorithm.datasets.coco import CocoTrainDataset
+from inference.pose_estimation.lightweight_open_pose.algorithm.datasets.coco import CocoValDataset
+from inference.pose_estimation.lightweight_open_pose.algorithm.datasets.transformations import (
     ConvertKeypoints,
     Scale,
     Rotate,
     CropPad,
     Flip,
 )
-from pose_estimation.lightweight_open_pose.algorithm.val import convert_to_coco_format, run_coco_eval, normalize, pad_width
-from pose_estimation.lightweight_open_pose.algorithm.scripts import prepare_train_labels, make_val_subset
+from inference.pose_estimation.lightweight_open_pose.algorithm.val import convert_to_coco_format, run_coco_eval, normalize, pad_width
+from inference.pose_estimation.lightweight_open_pose.algorithm.scripts import prepare_train_labels, make_val_subset
 
 cv2.setNumThreads(0)
 cv2.ocl.setUseOpenCL(False)  # To prevent freeze of DataLoader
@@ -1211,7 +1211,7 @@ class LightweightOpenPoseLearner(Learner):
             inp,
             output_name,
             verbose=verbose,
-            enable_onnx_checker=True,
+            # enable_onnx_checker=True,
             do_constant_folding=do_constant_folding,
             input_names=input_names,
             output_names=output_names,

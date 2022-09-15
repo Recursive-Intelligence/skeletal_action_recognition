@@ -8,11 +8,13 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-openpose_default/
+openpose_default/openpose_default.pth
+datasets/
 build/
 develop-eggs/
 dist/
 downloads/
+temp/
 eggs/
 .eggs/
 lib/

@@ -19,6 +19,7 @@ import os
 import pickle
 import random
 import shutil
+import pandas as pd
 import time
 from collections import OrderedDict
 from torch.utils.data import DataLoader
@@ -34,49 +35,49 @@ import json
 from urllib.request import urlretrieve
 
 # OpenDR engine imports
-from utils.learners import Learner
-from utils.datasets import ExternalDataset, DatasetIterator
-from utils.data import SkeletonSequence
-from utils.target import Category
-from utils.constants import OPENDR_SERVER_URL
+from inference.utils.learners import Learner
+from inference.utils.datasets import ExternalDataset, DatasetIterator
+from inference.utils.data import SkeletonSequence
+from inference.utils.target import Category
+from inference.utils.constants import OPENDR_SERVER_URL
 
 # OpenDR skeleton_based_action_recognition imports
 from models.stgcn import STGCN
 from models.tagcn import TAGCN
-from models.stbln import STBLN
+# from models.stbln import STBLN
 from src.feeder import Feeder
-from src.ntu_gendata import NTU60_CLASSES
-from src.kinetics_gendata import KINETICS400_CLASSES
+# from src.ntu_gendata import NTU60_CLASSES
+# from src.kinetics_gendata import KINETICS400_CLASSES
 
 
 class SpatioTemporalGCNLearner(Learner):
     def __init__(
         self,
-        lr=1e-1,
-        batch_size=128,
-        optimizer_name="sgd",
+        lr=1e-2,
+        batch_size=32,
+        optimizer_name="adam",
         lr_schedule="",
         checkpoint_after_iter=0,
         checkpoint_load_iter=0,
         temp_path="temp",
         device="cuda",
-        num_workers=32,
-        epochs=50,
-        experiment_name="stgcn_nturgbd",
+        num_workers=20,
+        epochs=45,
+        experiment_name="yagr",
         device_ind=[0],
-        val_batch_size=256,
+        val_batch_size=32,
         drop_after_epoch=[30, 40],
         start_epoch=0,
         dataset_name="nturgbd_cv",
-        num_class=60,
-        num_point=25,
-        num_person=2,
-        in_channels=3,
-        graph_type="ntu",
+        num_class=4,
+        num_point=18,
+        num_person=1,
+        in_channels=2,
+        graph_type="openpose",
         method_name="stgcn",
         stbln_symmetric=False,
-        num_frames=300,
-        num_subframes=100,
+        num_frames=150,  #original 300
+        num_subframes=100,   #original 100
     ):
         super(SpatioTemporalGCNLearner, self).__init__(
             lr=lr,
@@ -148,11 +149,13 @@ class SpatioTemporalGCNLearner(Learner):
                 self.device_ind[0] if type(self.device_ind) is list else self.device_ind
             )
         self.__init_seed(1)
-
-        if self.dataset_name in ["nturgbd_cv", "nturgbd_cs"]:
-            self.classes_dict = NTU60_CLASSES
-        elif self.dataset_name == "kinetics":
-            self.classes_dict = KINETICS400_CLASSES
+        # self.YGAR_10_CLASSES = pd.read_csv("datasets/ygar_10classes.csv", verbose=True, index_col=0).to_dict()["name"]
+        self.YGAR_10_CLASSES = {0 : "bokbulbok", 1: "sowing_corn_and_driving_pigeons", 2: "waves_crashing", 3 : "wind_that_shakes_trees"}
+        # if self.dataset_name in ["nturgbd_cv", "nturgbd_cs"]:
+        #     self.classes_dict = NTU60_CLASSES
+        # elif self.dataset_name == "kinetics":
+        #     self.classes_dict = KINETICS400_CLASSES
+        self.classes_dict = self.YGAR_10_CLASSES
 
     def fit(
         self,
@@ -163,11 +166,11 @@ class SpatioTemporalGCNLearner(Learner):
         verbose=True,
         momentum=0.9,
         nesterov=True,
-        weight_decay=0.0001,
-        train_data_filename="train_joints.npy",
-        train_labels_filename="train_labels.pkl",
-        val_data_filename="val_joints.npy",
-        val_labels_filename="val_labels.pkl",
+        weight_decay=0.001,
+        train_data_filename="train_data_joint.npy",
+        train_labels_filename="train_label.pkl",
+        val_data_filename="val_data_joint.npy",
+        val_labels_filename="val_label.pkl",
         skeleton_data_type="joint",
     ):
         """
@@ -204,6 +207,7 @@ class SpatioTemporalGCNLearner(Learner):
         self.logging_path = logging_path
         self.global_step = 0
         self.best_acc = 0
+        self.dataset_path = "/media/lakpa/Storage/youngdusan_data/gcn_data"
         # Tensorboard logging
         if self.logging_path != "" and self.logging_path is not None:
             self.logging = True
@@ -289,7 +293,7 @@ class SpatioTemporalGCNLearner(Learner):
             )
         # load data
         traindata = self.__prepare_dataset(
-            dataset,
+            self.dataset_path,
             data_filename=train_data_filename,
             labels_filename=train_labels_filename,
             skeleton_data_type=skeleton_data_type,
@@ -307,7 +311,7 @@ class SpatioTemporalGCNLearner(Learner):
         )
 
         valdata = self.__prepare_dataset(
-            val_dataset,
+            self.dataset_path,
             data_filename=val_data_filename,
             labels_filename=val_labels_filename,
             skeleton_data_type=skeleton_data_type,
@@ -330,9 +334,7 @@ class SpatioTemporalGCNLearner(Learner):
         for epoch in range(self.start_epoch, self.epochs):
             self.model.train()
             self.__print_log("Training epoch: {}".format(epoch + 1))
-            save_model = ((self.global_step + 1) % self.checkpoint_after_iter == 0) or (
-                epoch + 1 == self.epochs
-            )
+            save_model = (epoch + 1 == self.epochs)
             # save_model = ((epoch + 1) % self.checkpoint_after_iter == 0) or (epoch + 1 == self.epochs)
             loss_value = []
             if self.logging:
@@ -413,7 +415,8 @@ class SpatioTemporalGCNLearner(Learner):
                 self.ort_session = None
                 self.save(path=checkpoints_folder, model_name=checkpoint_name)
             eval_results = self.eval(
-                val_dataset,
+                #TODO: Fix eval dataset
+                self.dataset_path,
                 val_loader=val_loader,
                 epoch=epoch,
                 val_data_filename=val_data_filename,
@@ -439,8 +442,8 @@ class SpatioTemporalGCNLearner(Learner):
         epoch=0,
         silent=False,
         verbose=True,
-        val_data_filename="val_joints.npy",
-        val_labels_filename="val_labels.pkl",
+        val_data_filename="val_data_joint.npy",
+        val_labels_filename="val_label.pkl",
         skeleton_data_type="joint",
         save_score=False,
         wrong_file=None,
@@ -486,7 +489,7 @@ class SpatioTemporalGCNLearner(Learner):
         # load data
         if val_loader is None:
             valdata = self.__prepare_dataset(
-                val_dataset,
+                self.dataset_path,
                 data_filename=val_data_filename,
                 labels_filename=val_labels_filename,
                 skeleton_data_type=skeleton_data_type,
@@ -546,7 +549,7 @@ class SpatioTemporalGCNLearner(Learner):
         if accuracy > self.best_acc:
             self.best_acc = accuracy
         if verbose:
-            print("Accuracy: ", accuracy, " model: ", self.experiment_name)
+            print("Epoch", epoch, "Accuracy: ", accuracy, "loss :", loss, " model: ",  self.experiment_name)
         if self.model_train_state and self.logging:
             self.val_writer.add_scalar("loss", loss, self.global_step)
             self.val_writer.add_scalar("loss_l1", l1, self.global_step)
@@ -572,9 +575,9 @@ class SpatioTemporalGCNLearner(Learner):
 
     def __prepare_dataset(
         self,
-        dataset,
-        data_filename="train_joints.npy",
-        labels_filename="train_labels.pkl",
+        dataset_path,
+        data_filename="data_joint.npy",
+        labels_filename="label.pkl",
         skeleton_data_type="joint",
         phase="train",
         verbose=True,
@@ -599,45 +602,18 @@ class SpatioTemporalGCNLearner(Learner):
         :return: returns Feeder class object or DatasetIterator class object
         :rtype: Feeder class object or DatasetIterator class object
         """
-        if isinstance(dataset, ExternalDataset):
-            if (
-                dataset.dataset_type.lower() != "nturgbd"
-                and dataset.dataset_type.lower() != "kinetics"
-            ):
-                raise UserWarning('dataset_type must be "NTURGBD or Kinetics"')
-            # Get data and labels path
-            data_path = os.path.join(dataset.path, data_filename)
-            labels_path = os.path.join(dataset.path, labels_filename)
-            if phase == "train":
-                if (
-                    dataset.dataset_type.lower() == "nturgbd"
-                    or self.method_name == "tagcn"
-                ):
-                    random_choose = False
-                    random_move = False
-                    window_size = -1
-                elif dataset.dataset_type.lower() == "kinetics":
-                    random_choose = True
-                    random_move = True
-                    window_size = 150
-            else:
-                random_choose = False
-                random_move = False
-                window_size = -1
-
-            if verbose:
-                print("Dataset path is set. Loading feeder...")
-            return Feeder(
-                data_path=data_path,
-                label_path=labels_path,
-                random_choose=random_choose,
-                random_move=random_move,
-                window_size=window_size,
-                skeleton_data_type=skeleton_data_type,
-                data_name=dataset.dataset_type.lower(),
-            )
-        elif isinstance(dataset, DatasetIterator):
-            return dataset
+        
+        # For our case
+        data_path = os.path.join(dataset_path, data_filename)
+        labels_path = os.path.join(dataset_path, labels_filename)
+        
+        return Feeder(
+            data_path=data_path,
+            label_path=labels_path,
+            random_choose=True,
+            random_move=True,
+            window_size=150
+        )
 
     def init_model(self):
         """Initializes the imported model."""
@@ -666,17 +642,17 @@ class SpatioTemporalGCNLearner(Learner):
             )
             if self.logging:
                 shutil.copy2(inspect.getfile(TAGCN), self.logging_path)
-        elif self.method_name == "stbln":
-            self.model = STBLN(
-                num_class=self.num_class,
-                num_point=self.num_point,
-                num_person=self.num_person,
-                in_channels=self.in_channels,
-                symmetric=self.stbln_symmetric,
-                cuda_=cuda_,
-            )
-            if self.logging:
-                shutil.copy2(inspect.getfile(STBLN), self.logging_path)
+        # elif self.method_name == "stbln":
+        #     self.model = STBLN(
+        #         num_class=self.num_class,
+        #         num_point=self.num_point,
+        #         num_person=self.num_person,
+        #         in_channels=self.in_channels,
+        #         symmetric=self.stbln_symmetric,
+        #         cuda_=cuda_,
+        # #     )
+        #     if self.logging:
+        #         shutil.copy2(inspect.getfile(STBLN), self.logging_path)
         self.loss = nn.CrossEntropyLoss()
         self.model.to(self.device)
         # print(self.model)
@@ -719,6 +695,7 @@ class SpatioTemporalGCNLearner(Learner):
             output, l1 = output
         else:
             output = output
+        # output = self.model(SkeletonSeq_batch)
 
         m = nn.Softmax(dim=0)
         softmax_predictions = m(output.data[0])
@@ -1270,3 +1247,10 @@ class SpatioTemporalGCNLearner(Learner):
     def reset(self):
         """This method is not used in this implementation."""
         return NotImplementedError
+
+
+if __name__ == "__main__":
+    dataset = ""
+    val_dataset = ""
+    stgcn = SpatioTemporalGCNLearner()
+    stgcn.fit(dataset, val_dataset,)

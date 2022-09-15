@@ -42,7 +42,11 @@ def random_move(data_numpy,
     # input: C,T,V,M
     C, T, V, M = data_numpy.shape
     move_time = random.choice(move_time_candidate)
-    node = np.arange(0, T, T * 1.0 / move_time).round().astype(int)
+    try:
+        prenode = np.arange(0, T, T * 1.0 / move_time)
+    except ZeroDivisionError:
+        prenode = 0.0
+    node = np.round(prenode).astype(int)
     node = np.append(node, T)
     num_node = len(node)
 
@@ -98,7 +102,7 @@ def random_shift(data_numpy):
 class Feeder(Dataset):
     def __init__(self, data_path, label_path,
                  random_choose=False, random_shift=False, random_move=False,
-                 window_size=-1, normalization=False, use_mmap=True, skeleton_data_type='joint', data_name='nturgbd'):
+                 window_size=-1, normalization=False, use_mmap=True, skeleton_data_type='joint', data_name='openpose'):
         """
         :param data_path:
         :param label_path:
@@ -139,6 +143,7 @@ class Feeder(Dataset):
         if self.skeleton_data_type not in ['joint', 'bone', 'motion']:
             raise ValueError('skeleton_data_type should be a str named: joint or bone or motion')
         # load joint data
+        # We need joint data only, not bone or motion data. So use this to load the data
         if self.use_mmap:
             self.data = np.load(self.data_path, mmap_mode='r')
         else:

@@ -7,8 +7,8 @@ from pycocotools.cocoeval import COCOeval
 
 import torch
 
-from pose_estimation.lightweight_open_pose.algorithm.datasets.coco import CocoValDataset
-from pose_estimation.lightweight_open_pose.algorithm.modules.keypoints import \
+from inference.pose_estimation.lightweight_open_pose.algorithm.datasets.coco import CocoValDataset
+from inference.pose_estimation.lightweight_open_pose.algorithm.modules.keypoints import \
     extract_keypoints, group_keypoints
 
 

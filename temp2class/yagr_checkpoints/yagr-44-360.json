@@ -1,0 +1,1 @@
+{"model_paths": ["temp/yagr_checkpoints/yagr-44-360.pt"], "framework": "pytorch", "format": "pt", "has_data": false, "inference_params": {}, "optimized": false, "optimizer_info": {}}

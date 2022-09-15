@@ -18,7 +18,7 @@
 import torch
 from torch import nn
 
-from pose_estimation.lightweight_open_pose.algorithm.modules.conv import conv, conv_dw_no_bn
+from inference.pose_estimation.lightweight_open_pose.algorithm.modules.conv import conv, conv_dw_no_bn
 import math
 
 

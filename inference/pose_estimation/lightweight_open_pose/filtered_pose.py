@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from utils.target import Pose
-from pose_estimation.lightweight_open_pose.algorithm.modules.one_euro_filter import OneEuroFilter
+from inference.utils.target import Pose
+from inference.pose_estimation.lightweight_open_pose.algorithm.modules.one_euro_filter import OneEuroFilter
 
 
 class FilteredPose(Pose):
