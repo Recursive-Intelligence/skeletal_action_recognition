@@ -291,18 +291,18 @@ def save_labels(sample_names, class_names, out_path, part):
         #     if classname == action_class:
         #         categorical_sample_name = sample_name.replace(sample_name, str(class_names[action_class]))
                 sample_labels.append(int(new_label_name))
-    print(set(sample_labels))
+    # print(set(sample_labels))
     with open("{}/{}_label.pkl".format(out_path, part), "wb") as f:
         pickle.dump((sample_names, list(sample_labels)), f)
             
 def data_gen(args, total_frames, pose_estimator, out_path):
 
     training_subjects = [i for i in range(1, 301)]
-    class_names = {"crafty_tricks" : 0, "sowing_corn_and_driving_pigeons" : 1, "waves_crashing" : 2, 
-                    "flower_clock" : 3, "wind_that_shakes_trees" : 4, "big_wind" : 5, 
-                    "bokbulbok" : 6, "seaweed_in_the_swell_sea" : 7, "chulong_chulong_phaldo" : 8, 
-                    "chalseok_chalseok_phaldo" : 9}
-    # class_names = {"bokbulbok" : 0, "waves_crashing" : 1}
+    # class_names = {"crafty_tricks" : 0, "sowing_corn_and_driving_pigeons" : 1, "waves_crashing" : 2, 
+    #                 "flower_clock" : 3, "wind_that_shakes_trees" : 4, "big_wind" : 5, 
+    #                 "bokbulbok" : 6, "seaweed_in_the_swell_sea" : 7, "chulong_chulong_phaldo" : 8, 
+    #                 "chalseok_chalseok_phaldo" : 9}
+    class_names = {"bokbulbok" : 0, "waves_crashing" : 1, "wind_that_shakes_trees" : 2, "sowing_corn_and_driving_pigeons" : 3}
 
     sample_nums = []
     train_sample_names = []
@@ -321,9 +321,8 @@ def data_gen(args, total_frames, pose_estimator, out_path):
         else:
             val_sample_names.append(sample_name)
 
-    # save_data(train_sample_names, total_frames,pose_estimator, out_path, "train")
-    # save_data(val_sample_names, total_frames, pose_estimator, out_path, "val")
-    # for action_name in set(class_names.keys()):
+    save_data(train_sample_names, total_frames,pose_estimator, out_path, "train")
+    save_data(val_sample_names, total_frames, pose_estimator, out_path, "val")
     save_labels(train_sample_names, class_names, out_path, "train")
     save_labels(val_sample_names, class_names, out_path, "val")
 
@@ -343,7 +342,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--videos_path",
         type=str,
-        default="/media/lakpa/Storage/youngdusan_data/youngdusan_all_video_data",
+        default="/media/lakpa/Storage/youngdusan_data/youngdusan_2_classes",
         help="path to video files",
     )
     parser.add_argument(
@@ -382,5 +381,5 @@ if __name__ == "__main__":
 
     if not os.path.exists(args.out_folder):
         os.makedirs(args.out_folder)
-    total_frames = 60
+    total_frames = 300
     data_gen(args, total_frames, pose_estimator, args.out_folder)
