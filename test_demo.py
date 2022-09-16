@@ -91,7 +91,7 @@ def prepare_poses(frames, sequence):
     return data_numpy
 
 def preds2label(confidence):
-    k = 2
+    k = 4
     class_scores, class_inds = torch.topk(confidence, k=k)
     labels = {
         YGAR_10_CLASSES[int(class_inds[j])]: float(class_scores[j].item())
@@ -107,7 +107,7 @@ def draw_preds(frame, preds):
             (10, 40 + i * 30),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
-            (0, 255, 255),
+            (0, 0, 255),
             2,
         )
 
@@ -128,10 +128,10 @@ model_saved_path = "./temp/yagr_checkpoints"
 action_classifier.load(model_saved_path, "yagr-44-1485")
       
 # path = "/media/lakpa/Storage/youngdusan_data/test_video/videoplayback.mp4"
-# path = "/media/lakpa/Storage/youngdusan_data/test_video/bokbulbok_571.mov"
-# path = "/media/lakpa/Storage/youngdusan_data/test_video/waves_crashing_617.mov"
-# path = "/media/lakpa/Storage/youngdusan_data/youngdusan_video_data/sowing_corn_and_driving_pigeons/sowing_corn_and_driving_pigeons_565.mov"
-path = "/media/lakpa/Storage/youngdusan_data/youngdusan_video_data/wind_that_shakes_trees/wind_that_shakes_trees_563.mov"
+# path = "/media/lakpa/Storage/youngdusan_data/test_video/bokbulbok.mp4"
+# path = "/media/lakpa/Storage/youngdusan_data/test_video/windthatshakestrees.mp4"
+# path = "/media/lakpa/Storage/youngdusan_data/test_video/sowingcornforpigeons.mp4"
+path = "/media/lakpa/Storage/youngdusan_data/test_video/wavescrashing.mp4"
 
 
 image_provider = VideoReader(path)  # loading a video or get the camera id 0
