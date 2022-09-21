@@ -115,7 +115,7 @@ class STGCN(nn.Module):
             self.graph = KineticsGraph()
 
         A = self.graph.A
-        self.data_bn = nn.BatchNorm1d(num_person * in_channels * 18)
+        self.data_bn = nn.BatchNorm1d(num_person * in_channels * num_point)
         weights_init(self.data_bn, bs=1)
 
         self.layers = nn.ModuleDict(
