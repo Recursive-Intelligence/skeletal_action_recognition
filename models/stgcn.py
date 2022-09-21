@@ -7,8 +7,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-# from opendr.perception.skeleton_based_action_recognition.algorithm.graphs.nturgbd import NTUGraph
 from graphs.kinetics import KineticsGraph
+from graphs.nturgbd import NTUGraph
 
 
 def weights_init(module_, bs=1):
@@ -115,7 +115,7 @@ class STGCN(nn.Module):
             self.graph = KineticsGraph()
 
         A = self.graph.A
-        self.data_bn = nn.BatchNorm1d(num_person * in_channels * num_point)
+        self.data_bn = nn.BatchNorm1d(num_person * in_channels * 18)
         weights_init(self.data_bn, bs=1)
 
         self.layers = nn.ModuleDict(
