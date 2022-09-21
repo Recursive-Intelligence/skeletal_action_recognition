@@ -12,6 +12,7 @@ openpose_default/openpose_default.pth
 datasets/
 build/
 temp4class/
+temp_nturgbd/
 develop-eggs/
 dist/
 downloads/
