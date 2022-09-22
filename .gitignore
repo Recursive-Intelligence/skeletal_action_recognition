@@ -11,6 +11,7 @@ __pycache__/
 openpose_default/openpose_default.pth
 datasets/
 build/
+resources/
 temp4class/
 temp_nturgbd/
 develop-eggs/

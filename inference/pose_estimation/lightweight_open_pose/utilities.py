@@ -28,8 +28,8 @@ sigmas = np.array([.26, .79, .79, .72, .62, .79, .72, .62, 1.07, .87, .89, 1.07,
                   dtype=np.float32) / 10.0
 vars_ = (sigmas * 2) ** 2
 last_id = -1
-color1 = [0, 0, 255]
-color2 = [255, 120, 0]
+color1 = [0, 255, 0]
+color2 = [0, 0, 255]
 
 
 def get_bbox(pose):
@@ -78,12 +78,12 @@ def draw(img, pose):
         x_a, y_a, x_b, y_b = 0, 0, 0, 0
         if global_kpt_a_id != -1:
             x_a, y_a = pose.data[kpt_a_id]
-            cv2.circle(img, (int(x_a), int(y_a)), 3, color1, -1)
+            cv2.circle(img, (int(x_a), int(y_a)), 4, color1, -1)
         kpt_b_id = BODY_PARTS_KPT_IDS[part_id][1]
         global_kpt_b_id = pose.data[kpt_b_id, 0]
         if global_kpt_b_id != -1:
             x_b, y_b = pose.data[kpt_b_id]
-            cv2.circle(img, (int(x_b), int(y_b)), 3, color1, -1)
+            cv2.circle(img, (int(x_b), int(y_b)), 4, color1, -1)
         if global_kpt_a_id != -1 and global_kpt_b_id != -1:
             cv2.line(img, (int(x_a), int(y_a)), (int(x_b), int(y_b)), color2, 2)
 
