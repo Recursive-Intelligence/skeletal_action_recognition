@@ -1,26 +1,9 @@
-# Copyright 2020-2022 OpenDR European Project
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
 from __future__ import print_function
 import inspect
 import os
 import pickle
 import random
-from re import A
 import shutil
-import pandas as pd
 import time
 from collections import OrderedDict
 from torch.utils.data import DataLoader
@@ -34,19 +17,17 @@ from torch.autograd import Variable
 from tqdm import tqdm
 import json
 from urllib.request import urlretrieve
-from graphs.nturgbd import NTUGraph
 from graphs.kinetics import KineticsGraph
 
 # OpenDR engine imports
 from inference.utils.learners import Learner
-from inference.utils.datasets import ExternalDataset, DatasetIterator
 from inference.utils.data import SkeletonSequence
 from inference.utils.target import Category
 from inference.utils.constants import OPENDR_SERVER_URL
 
 # OpenDR skeleton_based_action_recognition imports
 from models.stgcn import STGCN
-from models.stgcn2 import Model
+from models.stgcn_old import Model
 from models.tagcn import TAGCN
 from src.feeder import Feeder
 
@@ -63,12 +44,12 @@ class SpatioTemporalGCNLearner(Learner):
         device="cuda",
         num_workers=20,
         epochs=45,
-        experiment_name="yagr",
+        experiment_name="yagr_old",
         device_ind=[0],
         val_batch_size=256,
         drop_after_epoch=[30, 40],
         start_epoch=0,
-        dataset_name="ygar_v2",
+        dataset_name="ygar",
         num_class=5,
         num_point=18,
         num_person=1,
@@ -150,16 +131,12 @@ class SpatioTemporalGCNLearner(Learner):
                 self.device_ind[0] if type(self.device_ind) is list else self.device_ind
             )
         self.__init_seed(1)
-        # self.YGAR_10_CLASSES = pd.read_csv("datasets/ygar_10classes.csv", verbose=True, index_col=0).to_dict()["name"]
-        self.YGAR_10_CLASSES = {0 : "big_wind", 1 : "bokbulbok", 2 : "chalseok_chalseok_phaldo", 3 : "chulong_chulong_phaldo", 4 : "crafty_tricks"}
-        # if self.dataset_name in ["nturgbd_cv", "nturgbd_cs"]:
-        #     self.classes_dict = NTU60_CLASSES
-        # elif self.dataset_name == "kinetics":
-        #     self.classes_dict = KINETICS400_CLASSES
-        self.classes_dict = self.YGAR_10_CLASSES
+        self.action_labels = {0 : "big_wind", 1 : "bokbulbok", 2 : "chalseok_chalseok_phaldo", 3 : "chulong_chulong_phaldo", 4 : "crafty_tricks"}
+        self.classes_dict = self.action_labels
 
     def fit(
         self,
+        dataset_path,
         logging_path="./resources/logs",
         silent=False,
         verbose=True,
@@ -174,10 +151,6 @@ class SpatioTemporalGCNLearner(Learner):
     ):
         """
         This method is used for training the algorithm on a train dataset and validating on a val dataset.
-        :param dataset: object that holds the training dataset
-        :type dataset: ExternalDataset class object or DatasetIterator class object
-        :param val_dataset: object that holds the validation dataset
-        :type val_dataset: ExternalDataset class object or DatasetIterator class object
         :param logging_path: path to save tensorboard log files. If set to None or '', tensorboard logging is
             disabled, defaults to ''
         :type logging_path: str, optional
@@ -206,7 +179,7 @@ class SpatioTemporalGCNLearner(Learner):
         self.logging_path = logging_path
         self.global_step = 0
         self.best_acc = 0
-        self.dataset_path = "./resources"
+        self.dataset_path = dataset_path
         # Tensorboard logging
         if self.logging_path != "" and self.logging_path is not None:
             self.logging = True
@@ -226,6 +199,7 @@ class SpatioTemporalGCNLearner(Learner):
                 )
         else:
             self.logging = False
+            
         # Initialize the model
         if self.model is None:
             self.init_model()
@@ -239,6 +213,7 @@ class SpatioTemporalGCNLearner(Learner):
                             output_device=self.output_device,
                         )
                 self.loss = self.loss.cuda(self.output_device)
+                
         # Load the model from a checkpoint
         checkpoints_folder = os.path.join(
             self.parent_dir, "{}_checkpoints".format(self.experiment_name)
@@ -261,6 +236,7 @@ class SpatioTemporalGCNLearner(Learner):
             self.__load_from_pt(checkpoint_path)
         if verbose:
             print("Model trainable parameters:", self.__count_parameters())
+            
         # set the optimizer
         if self.optimizer_name == "sgd":
             self.optimizer_ = optim.SGD(
@@ -290,7 +266,7 @@ class SpatioTemporalGCNLearner(Learner):
                 last_epoch=-1,
                 verbose=True,
             )
-        # load data
+        # Load data
         traindata = self.__prepare_dataset(
             self.dataset_path,
             data_filename=train_data_filename,
@@ -326,15 +302,14 @@ class SpatioTemporalGCNLearner(Learner):
             worker_init_fn=self.__init_seed(1),
         )
 
-        # start training
+        # Start training
         self.global_step = self.start_epoch * len(train_loader) / self.batch_size
-        # self.checkpoint_after_iter = int(len(train_loader) / self.batch_size)
         eval_results_list = []
+        
         for epoch in range(self.start_epoch, self.epochs):
             self.model.train()
             self.__print_log("Training epoch: {}".format(epoch + 1))
             save_model = (epoch + 1 == self.epochs)
-            # save_model = ((epoch + 1) % self.checkpoint_after_iter == 0) or (epoch + 1 == self.epochs)
             loss_value = []
             if self.logging:
                 self.train_writer.add_scalar("epoch", epoch, self.global_step)
@@ -415,7 +390,6 @@ class SpatioTemporalGCNLearner(Learner):
                 self.ort_session = None
                 self.save(path=checkpoints_folder, model_name=checkpoint_name)
             eval_results = self.eval(
-                #TODO: Fix eval dataset
                 self.dataset_path,
                 val_loader=val_loader,
                 epoch=epoch,
@@ -437,7 +411,7 @@ class SpatioTemporalGCNLearner(Learner):
 
     def eval(
         self,
-        val_dataset,
+        dataset,
         val_loader=None,
         epoch=0,
         silent=False,
@@ -452,10 +426,6 @@ class SpatioTemporalGCNLearner(Learner):
     ):
         """
         This method is used for evaluating the algorithm on a val dataset.
-        :param val_dataset: object that holds the val dataset
-        :type val_dataset: ExternalDataset class object or DatasetIterator class object
-        :param epoch: the number of epochs that the method is trained up to now. Default to 0 when we validate a
-        pretrained model.
         :type epoch: int, optional
         :param silent: if set to True, disables all printing of training progress reports and other information
             to STDOUT, defaults to 'False'
@@ -602,8 +572,6 @@ class SpatioTemporalGCNLearner(Learner):
         :return: returns Feeder class object or DatasetIterator class object
         :rtype: Feeder class object or DatasetIterator class object
         """
-        
-        # For our case
         data_path = os.path.join(dataset_path, data_filename)
         labels_path = os.path.join(dataset_path, labels_filename)
         
@@ -615,21 +583,24 @@ class SpatioTemporalGCNLearner(Learner):
             window_size=150
         )
 
-    def init_model(self):
-        """Initializes the imported model."""
+    def init_model(self, old_model = False):
+        """Initializes the imported model.
+        To choose old original implemented model by yysijie set old_model to True.
+        """
+        
         cuda_ = "cuda" in self.device
         if self.method_name == "stgcn":
-            self.model = STGCN(
-                num_class=self.num_class,
-                num_point=self.num_point,
-                num_person=self.num_person,
-                in_channels=self.in_channels,
-                graph_type=self.graph_type,
-                cuda_=cuda_,
-            )
-            # Use below self.model to use yysijie original implementation model
-            # self.model = Model(in_channels = self.in_channels, num_class=self.num_class, edge_importance_weighting = False)
-            
+            if old_model:
+                self.model = Model(in_channels = self.in_channels, num_class=self.num_class, edge_importance_weighting = False)
+            else:
+                self.model = STGCN(
+                    num_class=self.num_class,
+                    num_point=self.num_point,
+                    num_person=self.num_person,
+                    in_channels=self.in_channels,
+                    graph_type=self.graph_type,
+                    cuda_=cuda_,
+                )
             if self.logging:
                 shutil.copy2(inspect.getfile(STGCN), self.logging_path)
         elif self.method_name == "tagcn":
@@ -647,7 +618,6 @@ class SpatioTemporalGCNLearner(Learner):
                 shutil.copy2(inspect.getfile(TAGCN), self.logging_path)
         self.loss = nn.CrossEntropyLoss()
         self.model.to(self.device)
-        # print(self.model)
 
     def infer(self, SkeletonSeq_batch):
         """
@@ -687,7 +657,6 @@ class SpatioTemporalGCNLearner(Learner):
             output, l1 = output
         else:
             output = output
-        # output = self.model(SkeletonSeq_batch)
 
         m = nn.Softmax(dim=0)
         softmax_predictions = m(output.data[0])
@@ -1243,5 +1212,4 @@ class SpatioTemporalGCNLearner(Learner):
 
 if __name__ == "__main__":
     stgcn = SpatioTemporalGCNLearner()
-    results = stgcn.fit()
-    print(results)
+    results = stgcn.fit(dataset_path = "./resources")
