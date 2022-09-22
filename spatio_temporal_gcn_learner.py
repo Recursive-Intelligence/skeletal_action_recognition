@@ -72,7 +72,7 @@ class SpatioTemporalGCNLearner(Learner):
         val_batch_size=256,
         drop_after_epoch=[30, 40],
         start_epoch=0,
-        dataset_name="nturgbd_cv",
+        dataset_name="ygar_v2",
         num_class=4,
         num_point=18,
         num_person=1,
@@ -155,7 +155,7 @@ class SpatioTemporalGCNLearner(Learner):
             )
         self.__init_seed(1)
         # self.YGAR_10_CLASSES = pd.read_csv("datasets/ygar_10classes.csv", verbose=True, index_col=0).to_dict()["name"]
-        self.YGAR_10_CLASSES = {0 : "bokbulbok", 1: "sowing_corn_and_driving_pigeons", 2: "waves_crashing", 3 : "wind_that_shakes_trees"}
+        self.YGAR_10_CLASSES = {0 : "bigwind", 1 : "bokbulbok", 2 : "chalseok_chalseok_phaldo", 3 : "chulong_chulong_phaldo", 4 : "crafty_tricks"}
         # if self.dataset_name in ["nturgbd_cv", "nturgbd_cs"]:
         #     self.classes_dict = NTU60_CLASSES
         # elif self.dataset_name == "kinetics":
@@ -164,9 +164,7 @@ class SpatioTemporalGCNLearner(Learner):
 
     def fit(
         self,
-        dataset,
-        val_dataset,
-        logging_path="",
+        logging_path="./resources/logs",
         silent=False,
         verbose=True,
         momentum=0.9,
@@ -212,7 +210,7 @@ class SpatioTemporalGCNLearner(Learner):
         self.logging_path = logging_path
         self.global_step = 0
         self.best_acc = 0
-        self.dataset_path = "/media/lakpa/Storage/youngdusan_data/gcn_data"
+        self.dataset_path = "./resources"
         # Tensorboard logging
         if self.logging_path != "" and self.logging_path is not None:
             self.logging = True
@@ -651,17 +649,6 @@ class SpatioTemporalGCNLearner(Learner):
             )
             if self.logging:
                 shutil.copy2(inspect.getfile(TAGCN), self.logging_path)
-        # elif self.method_name == "stbln":
-        #     self.model = STBLN(
-        #         num_class=self.num_class,
-        #         num_point=self.num_point,
-        #         num_person=self.num_person,
-        #         in_channels=self.in_channels,
-        #         symmetric=self.stbln_symmetric,
-        #         cuda_=cuda_,
-        # #     )
-        #     if self.logging:
-        #         shutil.copy2(inspect.getfile(STBLN), self.logging_path)
         self.loss = nn.CrossEntropyLoss()
         self.model.to(self.device)
         # print(self.model)
@@ -1259,7 +1246,6 @@ class SpatioTemporalGCNLearner(Learner):
 
 
 if __name__ == "__main__":
-    dataset = ""
-    val_dataset = ""
     stgcn = SpatioTemporalGCNLearner()
-    stgcn.fit(dataset, val_dataset,)
+    results = stgcn.fit()
+    print(results)
