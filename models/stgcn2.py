@@ -64,6 +64,11 @@ class ConvTemporalGraphical(nn.Module):
 
         n, kc, t, v = x.size()
         x = x.view(n, self.kernel_size, kc//self.kernel_size, t, v)
+        # einsum is einstein summation notation
+        # Einsum composed of three steps: multiply, sum and transpose
+        # More explanation of einsum: https://stackoverflow.com/questions/66255238/how-does-torch-einsum-perform-this-4d-tensor-multiplication
+        # THe below equation means to do batchwise matrix multiplication of x and A. 
+        # The size of x is 5 dims, while of A is in 3 dims. The resultant tensor will be in 4 dims.
         x = torch.einsum('nkctv,kvw->nctw', (x, A))
 
         return x.contiguous(), A
