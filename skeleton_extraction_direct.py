@@ -123,10 +123,10 @@ def extract_data(videos_path, sample_names, total_frames, out_path, part):
                 counter += 1
                 poses_list.append(poses)
 
-            cv2.imshow("Result", img)
-            key = cv2.waitKey(1)
-            if key == ord("q"):
-                break
+            # cv2.imshow("Result", img)
+            # key = cv2.waitKey(1)
+            # if key == ord("q"):
+            #     break
 
         if counter > total_frames:
             for cnt in range(counter - total_frames):
@@ -144,7 +144,7 @@ def data_gen(videos_path, total_frames, out_path):
 
     training_subjects = [i for i in range(1, 301)]
 
-    class_names = {"bokbulbok" : 0, "waves_crashing" : 1, "wind_that_shakes_trees" : 2, "sowing_corn_and_driving_pigeons" : 3}
+    class_names = {"big_wind" : 0, "bokbulbok" : 1, "chalseok_chalseok_phaldo" : 2, "chulong_chulong_phaldo" : 3, "crafty_tricks" : 4}
 
     sample_nums = []
     train_sample_names = []
@@ -170,7 +170,7 @@ def data_gen(videos_path, total_frames, out_path):
     
 
 if __name__ == "__main__":
-    videos_path = "/media/lakpa/Storage/youngdusan_data/resized_video"
+    videos_path = "/media/lakpa/Storage/youngdusan_data/youngdusan_4_classes"
     total_frames = 300
     out_path = "./resources"
     if not os.path.exists(out_path):
