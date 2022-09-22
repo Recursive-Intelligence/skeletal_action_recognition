@@ -9,15 +9,13 @@ import torch
 from inference.pose_estimation.lightweight_open_pose.lightweight_open_pose_learner import \
     LightweightOpenPoseLearner
 from inference.pose_estimation.lightweight_open_pose.utilities import draw
-from spatio_temporal_gcn_learner import SpatioTemporalGCNLearner
-from skeleton_extraction_direct import VideoReader
+from train_stgcn import SpatioTemporalGCNLearner
+from data_extraction import VideoReader, DataExtractor
 
 class RecognitionDemo(object):
-    def __init__(self, video_path, channels = 2, total_frames = 300, landmarks = 18, num_persons = 1):
-        self.channels = channels
-        self.total_frames = total_frames
-        self.landmarks = landmarks
-        self.num_persons = num_persons
+    def __init__(self, video_path):
+
+        self.data_extractor = DataExtractor()
 
         self.pose_estimator = LightweightOpenPoseLearner()
         self.pose_estimator.download(path=".", verbose=True)
@@ -34,46 +32,6 @@ class RecognitionDemo(object):
         self.image_provider = VideoReader(video_path)
 
         self.action_labels = {0 : "big_wind", 1 : "bokbulbok", 2 : "chalseok_chalseok_phaldo", 3 : "chulong_chulong_phaldo", 4 : "crafty_tricks"}
-
-                
-    def tile(self, a, dim, n_tile):
-        a = torch.from_numpy(a)
-        init_dim = a.size(dim)
-        repeat_idx = [1] * a.dim()
-        repeat_idx[dim] = n_tile
-        a = a.repeat(*repeat_idx)
-        order_index = torch.LongTensor(
-            np.concatenate([init_dim * np.arange(n_tile) + i for i in range(init_dim)])
-        )
-        tiled_a = torch.index_select(a, dim, order_index)
-        return tiled_a.numpy()
-
-    def pose2numpy(self, num_current_frames, poses_list):
-        data_numpy = np.zeros((1, self.channels, num_current_frames, self.landmarks, self.num_persons))
-        skeleton_seq = np.zeros((1, self.channels, self.total_frames, self.landmarks, self.num_persons))
-        
-        for t in range(num_current_frames):
-            m = 0 # Only predicted single pose
-            data_numpy[0, 0:2, t, :, m] = np.transpose(poses_list[t][m].data)
-
-        # if we have less than num_frames, repeat frames to reach num_frames
-        diff = self.total_frames - num_current_frames
-        if diff == 0:
-            skeleton_seq = data_numpy
-        while diff > 0:
-            num_tiles = int(diff / num_current_frames)
-            if num_tiles > 0:
-                data_numpy = self.tile(data_numpy, 2, num_tiles + 1)
-                num_current_frames = data_numpy.shape[2]
-                diff = self.total_frames - num_current_frames
-            elif num_tiles == 0:
-                skeleton_seq[:, :, :num_current_frames, :, :] = data_numpy
-                for j in range(diff):
-                    skeleton_seq[:, :, num_current_frames + j, :, :] = data_numpy[
-                        :, :, -1, :, :
-                    ]
-                break
-        return skeleton_seq
 
     def preds2label(self, confidence):
         k = 4
@@ -110,12 +68,12 @@ class RecognitionDemo(object):
                 counter += 1
                 poses_list.append(poses)
 
-            if counter > self.total_frames:
+            if counter > self.data_extractor.total_frames:
                 poses_list.pop(0)
                 counter = self.total_frames
 
             if counter > 0:
-                skeleton_seq = self.pose2numpy(counter, poses_list)
+                skeleton_seq = self.data_extractor.pose2numpy(counter, poses_list)
 
                 prediction = self.action_classifier.infer(skeleton_seq)
                 category_labels = self.preds2label(prediction.confidence)
