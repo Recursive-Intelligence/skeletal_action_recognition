@@ -35,6 +35,7 @@ from tqdm import tqdm
 import json
 from urllib.request import urlretrieve
 from graphs.nturgbd import NTUGraph
+from graphs.kinetics import KineticsGraph
 
 # OpenDR engine imports
 from inference.utils.learners import Learner
@@ -47,12 +48,7 @@ from inference.utils.constants import OPENDR_SERVER_URL
 from models.stgcn import STGCN
 from models.stgcn2 import Model
 from models.tagcn import TAGCN
-from skeleton_extraction_mediapipe import KineticsGraph
-# from models.stbln import STBLN
 from src.feeder import Feeder
-# from src.ntu_gendata import NTU60_CLASSES
-# from src.kinetics_gendata import KINETICS400_CLASSES
-
 
 class SpatioTemporalGCNLearner(Learner):
     def __init__(
@@ -73,7 +69,7 @@ class SpatioTemporalGCNLearner(Learner):
         drop_after_epoch=[30, 40],
         start_epoch=0,
         dataset_name="ygar_v2",
-        num_class=4,
+        num_class=5,
         num_point=18,
         num_person=1,
         in_channels=2,
@@ -155,7 +151,7 @@ class SpatioTemporalGCNLearner(Learner):
             )
         self.__init_seed(1)
         # self.YGAR_10_CLASSES = pd.read_csv("datasets/ygar_10classes.csv", verbose=True, index_col=0).to_dict()["name"]
-        self.YGAR_10_CLASSES = {0 : "bigwind", 1 : "bokbulbok", 2 : "chalseok_chalseok_phaldo", 3 : "chulong_chulong_phaldo", 4 : "crafty_tricks"}
+        self.YGAR_10_CLASSES = {0 : "big_wind", 1 : "bokbulbok", 2 : "chalseok_chalseok_phaldo", 3 : "chulong_chulong_phaldo", 4 : "crafty_tricks"}
         # if self.dataset_name in ["nturgbd_cv", "nturgbd_cs"]:
         #     self.classes_dict = NTU60_CLASSES
         # elif self.dataset_name == "kinetics":
