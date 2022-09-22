@@ -18,6 +18,7 @@ import inspect
 import os
 import pickle
 import random
+from re import A
 import shutil
 import pandas as pd
 import time
@@ -33,6 +34,8 @@ from torch.autograd import Variable
 from tqdm import tqdm
 import json
 from urllib.request import urlretrieve
+from graphs.nturgbd import NTUGraph
+from graphs.kinetics import KineticsGraph
 
 # OpenDR engine imports
 from inference.utils.learners import Learner
@@ -43,18 +46,15 @@ from inference.utils.constants import OPENDR_SERVER_URL
 
 # OpenDR skeleton_based_action_recognition imports
 from models.stgcn import STGCN
+from models.stgcn2 import Model
 from models.tagcn import TAGCN
-# from models.stbln import STBLN
 from src.feeder import Feeder
-# from src.ntu_gendata import NTU60_CLASSES
-# from src.kinetics_gendata import KINETICS400_CLASSES
-
 
 class SpatioTemporalGCNLearner(Learner):
     def __init__(
         self,
-        lr=1e-2,
-        batch_size=32,
+        lr=1e-3,
+        batch_size=128,
         optimizer_name="adam",
         lr_schedule="",
         checkpoint_after_iter=0,
@@ -65,18 +65,18 @@ class SpatioTemporalGCNLearner(Learner):
         epochs=45,
         experiment_name="yagr",
         device_ind=[0],
-        val_batch_size=32,
+        val_batch_size=256,
         drop_after_epoch=[30, 40],
         start_epoch=0,
-        dataset_name="nturgbd_cv",
-        num_class=4,
+        dataset_name="ygar_v2",
+        num_class=5,
         num_point=18,
         num_person=1,
         in_channels=2,
         graph_type="openpose",
         method_name="stgcn",
         stbln_symmetric=False,
-        num_frames=150,  #original 300
+        num_frames=300,  #original 300
         num_subframes=100,   #original 100
     ):
         super(SpatioTemporalGCNLearner, self).__init__(
@@ -119,6 +119,7 @@ class SpatioTemporalGCNLearner(Learner):
         self.stbln_symmetric = stbln_symmetric
         self.num_frames = num_frames
         self.num_subframes = num_subframes
+        self.graph = KineticsGraph()
 
         if self.num_subframes > self.num_frames:
             raise ValueError(
@@ -150,7 +151,7 @@ class SpatioTemporalGCNLearner(Learner):
             )
         self.__init_seed(1)
         # self.YGAR_10_CLASSES = pd.read_csv("datasets/ygar_10classes.csv", verbose=True, index_col=0).to_dict()["name"]
-        self.YGAR_10_CLASSES = {0 : "bokbulbok", 1: "sowing_corn_and_driving_pigeons", 2: "waves_crashing", 3 : "wind_that_shakes_trees"}
+        self.YGAR_10_CLASSES = {0 : "big_wind", 1 : "bokbulbok", 2 : "chalseok_chalseok_phaldo", 3 : "chulong_chulong_phaldo", 4 : "crafty_tricks"}
         # if self.dataset_name in ["nturgbd_cv", "nturgbd_cs"]:
         #     self.classes_dict = NTU60_CLASSES
         # elif self.dataset_name == "kinetics":
@@ -159,9 +160,7 @@ class SpatioTemporalGCNLearner(Learner):
 
     def fit(
         self,
-        dataset,
-        val_dataset,
-        logging_path="",
+        logging_path="./resources/logs",
         silent=False,
         verbose=True,
         momentum=0.9,
@@ -207,7 +206,7 @@ class SpatioTemporalGCNLearner(Learner):
         self.logging_path = logging_path
         self.global_step = 0
         self.best_acc = 0
-        self.dataset_path = "/media/lakpa/Storage/youngdusan_data/gcn_data"
+        self.dataset_path = "./resources"
         # Tensorboard logging
         if self.logging_path != "" and self.logging_path is not None:
             self.logging = True
@@ -358,6 +357,7 @@ class SpatioTemporalGCNLearner(Learner):
                 timer["dataloader"] += self.__split_time()
 
                 # forward
+                A = self.graph.A
                 output = self.model(data)
                 if isinstance(output, tuple):
                     output, l1 = output
@@ -627,6 +627,9 @@ class SpatioTemporalGCNLearner(Learner):
                 graph_type=self.graph_type,
                 cuda_=cuda_,
             )
+            # Use below self.model to use yysijie original implementation model
+            # self.model = Model(in_channels = self.in_channels, num_class=self.num_class, edge_importance_weighting = False)
+            
             if self.logging:
                 shutil.copy2(inspect.getfile(STGCN), self.logging_path)
         elif self.method_name == "tagcn":
@@ -642,17 +645,6 @@ class SpatioTemporalGCNLearner(Learner):
             )
             if self.logging:
                 shutil.copy2(inspect.getfile(TAGCN), self.logging_path)
-        # elif self.method_name == "stbln":
-        #     self.model = STBLN(
-        #         num_class=self.num_class,
-        #         num_point=self.num_point,
-        #         num_person=self.num_person,
-        #         in_channels=self.in_channels,
-        #         symmetric=self.stbln_symmetric,
-        #         cuda_=cuda_,
-        # #     )
-        #     if self.logging:
-        #         shutil.copy2(inspect.getfile(STBLN), self.logging_path)
         self.loss = nn.CrossEntropyLoss()
         self.model.to(self.device)
         # print(self.model)
@@ -1250,7 +1242,6 @@ class SpatioTemporalGCNLearner(Learner):
 
 
 if __name__ == "__main__":
-    dataset = ""
-    val_dataset = ""
     stgcn = SpatioTemporalGCNLearner()
-    stgcn.fit(dataset, val_dataset,)
+    results = stgcn.fit()
+    print(results)

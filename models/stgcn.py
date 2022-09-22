@@ -7,8 +7,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-# from opendr.perception.skeleton_based_action_recognition.algorithm.graphs.nturgbd import NTUGraph
 from graphs.kinetics import KineticsGraph
+from graphs.nturgbd import NTUGraph
 
 
 def weights_init(module_, bs=1):
