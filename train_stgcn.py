@@ -58,6 +58,7 @@ class SpatioTemporalGCNLearner(Learner):
         in_channels=2,
         graph_type="openpose",
         method_name="stgcn",
+        old_model = False,
         stbln_symmetric=False,
         num_frames=300,  #original 300
         num_subframes=100,   #original 100
@@ -102,6 +103,7 @@ class SpatioTemporalGCNLearner(Learner):
         self.stbln_symmetric = stbln_symmetric
         self.num_frames = num_frames
         self.num_subframes = num_subframes
+        self.old_model = old_model
         self.graph = KineticsGraph()
 
         if self.num_subframes > self.num_frames:
@@ -585,14 +587,14 @@ class SpatioTemporalGCNLearner(Learner):
             window_size=150
         )
 
-    def init_model(self, old_model = False):
+    def init_model(self):
         """Initializes the imported model.
         To choose old original implemented model by yysijie set old_model to True.
         """
         
         cuda_ = "cuda" in self.device
         if self.method_name == "stgcn":
-            if old_model:
+            if self.old_model:
                 self.model = Model(in_channels = self.in_channels, num_class=self.num_class, edge_importance_weighting = False)
             else:
                 self.model = STGCN(
@@ -1213,5 +1215,5 @@ class SpatioTemporalGCNLearner(Learner):
 
 
 if __name__ == "__main__":
-    stgcn = SpatioTemporalGCNLearner()
-    results = stgcn.fit(dataset_path = "./resources")
+    stgcn = SpatioTemporalGCNLearner(experiment_name="yagr_allclass_old", epochs=45, num_class=10, old_model=True)
+    results = stgcn.fit(dataset_path = "./resources/all_classes")
