@@ -57,6 +57,7 @@ class RecognitionDemo(object):
     def prediction(self):
         counter = 0
         poses_list = []
+        predicted_labels = []
         for img in self.image_provider:
             start_time = time.perf_counter()
             poses = self.pose_estimator.infer(img)
@@ -80,7 +81,11 @@ class RecognitionDemo(object):
                 self.draw_preds(img, category_labels)
 
             predicted_label = torch.argmax(prediction.confidence)
-            print(predicted_label)
+            predicted_labels.append(predicted_label.item())
+            if len(predicted_labels) == 50:
+                voting_result = max(predicted_labels, key=predicted_labels.count)
+                predicted_labels.clear()
+                print(voting_result)
             
             end_time = time.perf_counter()
             fps = 1.0 / (end_time - start_time)
