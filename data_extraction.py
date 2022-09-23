@@ -83,7 +83,7 @@ class DataExtractor(object):
                 break
         return skeleton_seq
 
-    def save_labels(sample_names, class_names, out_path, part):
+    def save_labels(self, sample_names, class_names, out_path, part):
         sample_labels = []
         classnames = sorted(list(class_names.keys()))
         for sample_name in sample_names:
@@ -140,7 +140,11 @@ class DataExtractor(object):
 
         training_subjects = [i for i in range(1, 301)]
 
-        class_names = {"big_wind" : 0, "bokbulbok" : 1, "chalseok_chalseok_phaldo" : 2, "chulong_chulong_phaldo" : 3, "crafty_tricks" : 4}
+        # class_names = {"big_wind" : 0, "bokbulbok" : 1, "chalseok_chalseok_phaldo" : 2, "chulong_chulong_phaldo" : 3, "crafty_tricks" : 4}
+        class_names = {"big_wind" : 0, "bokbulbok" : 1, "chalseok_chalseok_phaldo" : 2, 
+                       "chulong_chulong_phaldo" : 3, "crafty_tricks" : 4, "flower_clock" : 5, 
+                       "seaweed_in_the_swell_sea" : 6, "sowing_corn_and_driving_pigeons" : 7, 
+                       "waves_crashing" : 8, "wind_that_shakes_trees" : 9}
 
         sample_nums = []
         train_sample_names = []
@@ -158,15 +162,15 @@ class DataExtractor(object):
             else:
                 val_sample_names.append(sample_name)
 
-        self.extract_data(train_sample_names, self.total_frames, out_path, "train")
-        self.extract_data(val_sample_names, self.total_frames, out_path, "val")
+        # self.extract_data(train_sample_names, self.total_frames, out_path, "train")
+        # self.extract_data(val_sample_names, self.total_frames, out_path, "val")
         self.save_labels(train_sample_names, class_names, out_path, "train")
         self.save_labels(val_sample_names, class_names, out_path, "val")
         
 
 if __name__ == "__main__":
-    videos_path = "/media/lakpa/Storage/youngdusan_data/youngdusan_4_classes"
-    out_path = "./resources"
+    videos_path = "/media/lakpa/Storage/youngdusan_data/all_resized_videos"
+    out_path = "./resources/all_classes"
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     
