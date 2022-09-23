@@ -135,7 +135,9 @@ class SpatioTemporalGCNLearner(Learner):
                 self.device_ind[0] if type(self.device_ind) is list else self.device_ind
             )
         self.__init_seed(1)
-        self.action_labels = {0 : "big_wind", 1 : "bokbulbok", 2 : "chalseok_chalseok_phaldo", 3 : "chulong_chulong_phaldo", 4 : "crafty_tricks"}
+        self.action_labels = {0 : "big_wind", 1 : "bokbulbok", 2 : "chalseok_chalseok_phaldo", 3 : "chulong_chulong_phaldo", 4 : "crafty_tricks",
+                              4 : "flower_clock", 6 : "seaweed_in_the_swell_sea", 7 : "sowing_corn_and_driving_pigeons",
+                              8 : "waves_crashing", 9 : "wind_that_shakes_trees"}
         self.classes_dict = self.action_labels
 
     def fit(
