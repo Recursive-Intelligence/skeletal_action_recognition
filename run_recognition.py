@@ -30,7 +30,7 @@ class RecognitionDemo(object):
         self.action_classifier.load(self.model_saved_path, "yagr-44-495")  
 
         self.image_provider = VideoReader(video_path)
-
+        self.no_frames = 0
         self.action_labels = {0 : "big_wind", 1 : "bokbulbok", 2 : "chalseok_chalseok_phaldo", 3 : "chulong_chulong_phaldo", 4 : "crafty_tricks"}
 
     def preds2label(self, confidence):
@@ -104,13 +104,41 @@ class RecognitionDemo(object):
             fps = 1.0 / (end_time - start_time)
             avg_fps = 0.8 * fps + 0.2 * fps
             img = cv2.putText(img,"FPS: %.2f" % (avg_fps,),(100, 400),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
-            img = cv2.putText(img, voting_label,(100, 220),cv2.FONT_HERSHEY_SIMPLEX,1,(0, 0, 255),2)
+            
+            img = cv2.putText(img, voting_label,(100, 220),cv2.FONT_HERSHEY_SIMPLEX,3,(0, 0, 255),3)
             cv2.imshow("Result", img)
             key = cv2.waitKey(1)
             if key == ord("q"):
-                break      
-
+                break 
+            # if len(voting_label) > 0:
+            #     self.no_frames = 20
+            #     self.puttext_in_consecutive_frames(self.no_frames, img, voting_label)
+                 
+    def display_pose_name(self, image, text):
+        img = cv2.putText(
+            image,
+            text,
+            (7, 50),
+            cv2.FONT_HERSHEY_COMPLEX,
+            2,
+            (0, 0, 0),
+            2,
+        )
+    
+        cv2.imshow("Result", img)
+        
+    def check_no_frames(self, frames, image, voting_label):
+        if frames != 0:
+            self.puttext_in_consecutive_frames(frames, image, voting_label)
+            
+    def puttext_in_consecutive_frames(self, no_frames, image, voting_label):
+        if no_frames > 0:
+            self.display_pose_name(image, voting_label)
+            no_frames -= 1
+            self.check_no_frames(no_frames, image, voting_label)
+    
+    
 if __name__ == "__main__":
-    path = "./resources/test_videos/wind_that_shakes_trees_602.mp4"
+    path = "./resources/test_videos/wholeaction.mp4"
     recdem = RecognitionDemo(video_path=path)
     recdem.prediction()
