@@ -52,7 +52,7 @@ class SpatioTemporalGCNLearner(Learner):
         drop_after_epoch=[30, 40],
         start_epoch=0,
         dataset_name="ygar",
-        num_class=5,
+        num_class=10,
         num_point=18,
         num_person=1,
         in_channels=2,
@@ -60,8 +60,8 @@ class SpatioTemporalGCNLearner(Learner):
         method_name="stgcn",
         old_model = False,
         stbln_symmetric=False,
-        num_frames=300,  #original 300
-        num_subframes=100,   #original 100
+        num_frames=60,  #original 300
+        num_subframes=30,   #original 100
     ):
         super(SpatioTemporalGCNLearner, self).__init__(
             lr=lr,
@@ -518,7 +518,9 @@ class SpatioTemporalGCNLearner(Learner):
                         f_w.write(
                             str(index[i]) + "," + str(x) + "," + str(true[i]) + "\n"
                         )
-
+        learning_details = {}
+        losses = []
+        accuracies = []
         score = np.concatenate(score_frag)
         loss = np.mean(loss_value)
         accuracy = val_loader.dataset.top_k(score, 1)
@@ -526,6 +528,8 @@ class SpatioTemporalGCNLearner(Learner):
             self.best_acc = accuracy
         if verbose:
             print("Epoch", epoch, "Accuracy: ", accuracy, "loss :", loss, " model: ",  self.experiment_name)
+            losses.append(loss)
+            accuracies.append(accuracy)
         if self.model_train_state and self.logging:
             self.val_writer.add_scalar("loss", loss, self.global_step)
             self.val_writer.add_scalar("loss_l1", l1, self.global_step)
@@ -547,6 +551,12 @@ class SpatioTemporalGCNLearner(Learner):
                 "wb",
             ) as f:
                 pickle.dump(score_dict, f)
+        learning_details["loss"] = losses
+        learning_details["accuracy"] = accuracies
+        
+        with open("./resources/learning_details.json", "w") as f:
+            json.dump(learning_details, f)
+            
         return {"epoch": epoch, "accuracy": accuracy, "loss": loss, "score": score}
 
     def __prepare_dataset(
@@ -1217,5 +1227,5 @@ class SpatioTemporalGCNLearner(Learner):
 
 
 if __name__ == "__main__":
-    stgcn = SpatioTemporalGCNLearner(experiment_name="yagr_allclass_old", epochs=45, num_class=10, old_model=True)
-    results = stgcn.fit(dataset_path = "./resources/all_classes")
+    stgcn = SpatioTemporalGCNLearner(experiment_name="yagr_all_class_60_frames", epochs=45, num_class=10, old_model=True)
+    results = stgcn.fit(dataset_path = "./resources/all_classes_60frames")
