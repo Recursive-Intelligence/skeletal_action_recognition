@@ -23,6 +23,8 @@ class VideoReader(object):
 
     def __iter__(self):
         self.cap = cv2.VideoCapture(self.file_name)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1080)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         if not self.cap.isOpened():
             raise IOError("Video {} cannot be opened".format(self.file_name))
         return self
@@ -96,7 +98,29 @@ class DataExtractor(object):
 
         with open("{}/{}_label.pkl".format(out_path, part), "wb") as f:
             pickle.dump((sample_names, list(sample_labels)), f)
-            
+    
+    def skip_n_frames(self, poses_list, required_frame = 60, skip_frame_val = 3):
+        
+        skipped_frames = []
+        for i in range(0, len(poses_list), skip_frame_val):
+            skipped_frames.append(poses_list[i])
+
+        extra_frames = required_frame - len(skipped_frames)
+        
+        if extra_frames < 0:
+            remove_index = [i for i in range(1, int(abs(extra_frames) / 2) + 1)]
+            for i in remove_index:
+                del skipped_frames[i]
+                del skipped_frames[-i]
+
+        elif extra_frames > 0:
+            copy_index = [i for i in range(1, abs(extra_frames) + 1)]
+            for i in copy_index:
+                copied_frame = skipped_frames[-i].copy()
+                skipped_frames.append(copied_frame)
+
+        return skipped_frames
+       
     def extract_data(self, sample_names, total_frames, out_path, part):
         skeleton_data = np.zeros(
             (len(sample_names), 2, total_frames, 18, 1), dtype=np.float32
@@ -118,20 +142,21 @@ class DataExtractor(object):
                 if len(poses) > 0:
                     counter += 1
                     poses_list.append(poses)
-                    
+                
                 if self.visualize:
                     cv2.imshow("Result", img)
                     key = cv2.waitKey(1)
                     if key == ord("q"):
                         break
 
-            if counter > total_frames:
-                for cnt in range(counter - total_frames):
-                    poses_list.pop(0)
-                counter = total_frames
+            final_poses_list = self.skip_n_frames(poses_list=poses_list)
+            counter = len(final_poses_list)
+            # if counter > total_frames:
+            #     for cnt in range(counter - total_frames):
+            #         final_poses_list.pop(0)
             
             if counter > 0:
-                frame_skeleton_seq = self.pose2numpy(counter, poses_list)
+                frame_skeleton_seq = self.pose2numpy(counter, final_poses_list)
                 skeleton_data[i, :, :, :, :] = frame_skeleton_seq
                 
         np.save("{}/{}_data_joint.npy".format(out_path, part), skeleton_data)
@@ -162,17 +187,17 @@ class DataExtractor(object):
             else:
                 val_sample_names.append(sample_name)
 
-        # self.extract_data(train_sample_names, self.total_frames, out_path, "train")
-        # self.extract_data(val_sample_names, self.total_frames, out_path, "val")
+        self.extract_data(train_sample_names, self.total_frames, out_path, "train")
+        self.extract_data(val_sample_names, self.total_frames, out_path, "val")
         self.save_labels(train_sample_names, class_names, out_path, "train")
         self.save_labels(val_sample_names, class_names, out_path, "val")
         
 
 if __name__ == "__main__":
     videos_path = "/media/lakpa/Storage/youngdusan_data/all_resized_videos"
-    out_path = "./resources/all_classes"
+    out_path = "./resources/all_classes_60frames"
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     
-    dataextractor = DataExtractor(videos_path=videos_path, visualize=False)
+    dataextractor = DataExtractor(videos_path=videos_path, visualize=False, total_frames=60)
     dataextractor.data_gen(out_path)
