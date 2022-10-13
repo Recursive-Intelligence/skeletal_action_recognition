@@ -20,5 +20,5 @@ def reduce_video_resolution(path, destination_dir = ""):
         final.write_videofile(f"{output_path}/{filename}.mp4")
 
 if __name__ == "__main__":
-    path = "/media/lakpa/Storage/youngdusan_data/youngdusan_all_video_data"
-    reduce_video_resolution(path, destination_dir = "./resized_videos")
+    path = "/media/lakpa/Storage/youngdusan_data/test_video"
+    reduce_video_resolution(path, destination_dir = path)
