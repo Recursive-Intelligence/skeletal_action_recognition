@@ -46,7 +46,7 @@ class SpatioTemporalGCNLearner(Learner):
         device="cuda",
         num_workers=20,
         epochs=45,
-        experiment_name="yagr_old",
+        experiment_name="yagr_all_class_60_frames_v2",
         device_ind=[0],
         val_batch_size=256,
         drop_after_epoch=[30, 40],
@@ -58,7 +58,7 @@ class SpatioTemporalGCNLearner(Learner):
         in_channels=2,
         graph_type="openpose",
         method_name="stgcn",
-        old_model = False,
+        old_model = True,
         stbln_symmetric=False,
         num_frames=60,  #original 300
         num_subframes=30,   #original 100
@@ -136,7 +136,7 @@ class SpatioTemporalGCNLearner(Learner):
             )
         self.__init_seed(1)
         self.action_labels = {0 : "big_wind", 1 : "bokbulbok", 2 : "chalseok_chalseok_phaldo", 3 : "chulong_chulong_phaldo", 4 : "crafty_tricks",
-                              4 : "flower_clock", 6 : "seaweed_in_the_swell_sea", 7 : "sowing_corn_and_driving_pigeons",
+                              5 : "flower_clock", 6 : "seaweed_in_the_swell_sea", 7 : "sowing_corn_and_driving_pigeons",
                               8 : "waves_crashing", 9 : "wind_that_shakes_trees"}
         self.classes_dict = self.action_labels
 
@@ -1227,5 +1227,5 @@ class SpatioTemporalGCNLearner(Learner):
 
 
 if __name__ == "__main__":
-    stgcn = SpatioTemporalGCNLearner(experiment_name="yagr_all_class_60_frames", epochs=45, num_class=10, old_model=True)
+    stgcn = SpatioTemporalGCNLearner(experiment_name="yagr_all_class_60_frames_v2", epochs=45, num_class=10, old_model=True)
     results = stgcn.fit(dataset_path = "./resources/all_classes_60frames")
