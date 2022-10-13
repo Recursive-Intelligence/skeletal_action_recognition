@@ -59,6 +59,7 @@ class RecognitionDemo(object):
     def prediction(self):
         counter = 0
         poses_list = []
+        pred_list = []
         for img in self.image_provider:
             height, width, _ = img.shape
             start_time = time.perf_counter()
@@ -86,14 +87,21 @@ class RecognitionDemo(object):
                         predicted_label = torch.argmax(prediction.confidence)
                         if counter > 150:
                             pred_text = self.action_labels[predicted_label.item()]
+                            pred_list.append(pred_text)
                         else:
-                            pred_text = ""
-                        img = cv2.putText(img, pred_text,(100, 220),cv2.FONT_HERSHEY_SIMPLEX,3,(0, 0, 255),3)                        
-
+                            pred_text = ""   
+                        
+                        if len(pred_list) > 10:
+                            pred_list.clear()
+                            img = cv2.putText(img, "",(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)
+                        
+                        else:                         
+                            img = cv2.putText(img, pred_text,(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)                        
+            
             end_time = time.perf_counter()
             fps = 1.0 / (end_time - start_time)
             avg_fps = 0.8 * fps + 0.2 * fps
-            img = cv2.putText(img,"FPS: %.2f" % (avg_fps,),(100, 400),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
+            img = cv2.putText(img,"FPS: %.2f" % (avg_fps,),(10, 60),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
             cv2.imshow("Result", img)
             key = cv2.waitKey(1)
             if key == ord("q"):
