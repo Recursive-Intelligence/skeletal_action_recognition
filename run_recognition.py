@@ -26,15 +26,17 @@ class RecognitionDemo(object):
             num_point=18,
             graph_type="openpose",
         )
-        self.model_saved_path = "./temp/yagr_checkpoints"
-        self.action_classifier.load(self.model_saved_path, "yagr-44-495")  
+        self.model_saved_path = "./temp/yagr_all_class_60_frames_v2_checkpoints"
+        self.action_classifier.load(self.model_saved_path, "yagr_all_class_60_frames_v2-44-945")  
 
         self.image_provider = VideoReader(video_path)
         self.no_frames = 0
-        self.action_labels = {0 : "big_wind", 1 : "bokbulbok", 2 : "chalseok_chalseok_phaldo", 3 : "chulong_chulong_phaldo", 4 : "crafty_tricks"}
+        self.action_labels = {0 : 'big_wind', 1 : 'bokbulbok', 2 : 'chalseok_chalseok_phaldo', 3 : 'chulong_chulong_phaldo', 4 : 'crafty_tricks',
+                                5 : 'flower_clock', 6 : 'seaweed_in_the_swell_sea', 7 : 'sowing_corn_and_driving_pigeons', 8 : 'waves_crashing',
+                                9 : 'wind_that_shakes_trees'}
 
     def preds2label(self, confidence):
-        k = 5
+        k = 10
         class_scores, class_inds = torch.topk(confidence, k=k)
         labels = {
             self.action_labels[int(class_inds[j])]: float(class_scores[j].item())
@@ -84,11 +86,12 @@ class RecognitionDemo(object):
                     # print(prediction)
                     skeleton_seq = []
                     category_labels = self.preds2label(prediction.confidence)
-                    # print(category_labels)
+                    print(category_labels)
                     if max(list(category_labels.values())) > 0.7:
                         # self.draw_predgit ss(img, category_labels)
 
                         predicted_label = torch.argmax(prediction.confidence)
+                        # print(predicted_label)
                         predicted_labels.append(predicted_label.item())
                         
             voting_label = ""
