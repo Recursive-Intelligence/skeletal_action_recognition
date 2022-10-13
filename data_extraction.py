@@ -36,7 +36,7 @@ class VideoReader(object):
         return img
 
 class DataExtractor(object):
-    def __init__(self, channels = 2, total_frames = 300, landmarks = 18, num_persons = 1, videos_path = None, visualize = False):  
+    def __init__(self, channels = 2, total_frames = 300, landmarks = 18, num_persons = 1, videos_path = None, visualize = False, use_skip_frames = False):  
         self.channels = channels
         self.total_frames = total_frames
         self.landmarks = landmarks
@@ -45,6 +45,7 @@ class DataExtractor(object):
         self.pose_estimator.load("openpose_default")
         self.videos_path = videos_path
         self.visualize = visualize
+        self.use_skip_frames = use_skip_frames
 
     def tile(self, a, dim, n_tile):
         a = torch.from_numpy(a)
@@ -148,15 +149,18 @@ class DataExtractor(object):
                     key = cv2.waitKey(1)
                     if key == ord("q"):
                         break
-
-            final_poses_list = self.skip_n_frames(poses_list=poses_list)
-            counter = len(final_poses_list)
-            # if counter > total_frames:
-            #     for cnt in range(counter - total_frames):
-            #         final_poses_list.pop(0)
             
+            if self.use_skip_frames:
+                poses_list = self.skip_n_frames(poses_list=poses_list)
+                counter = len(poses_list)
+            else:
+                if counter > total_frames:
+                    for cnt in range(counter - total_frames):
+                        poses_list.pop(0)
+                    counter = total_frames
+        
             if counter > 0:
-                frame_skeleton_seq = self.pose2numpy(counter, final_poses_list)
+                frame_skeleton_seq = self.pose2numpy(counter, poses_list)
                 skeleton_data[i, :, :, :, :] = frame_skeleton_seq
                 
         np.save("{}/{}_data_joint.npy".format(out_path, part), skeleton_data)
@@ -195,7 +199,7 @@ class DataExtractor(object):
 
 if __name__ == "__main__":
     videos_path = "/media/lakpa/Storage/youngdusan_data/all_resized_videos"
-    out_path = "./resources/all_classes_60frames"
+    out_path = "./resources/all_classes_60frames_test"
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     
