@@ -59,11 +59,8 @@ class RecognitionDemo(object):
     def prediction(self):
         counter = 0
         poses_list = []
-        predicted_labels = []
         for img in self.image_provider:
-            # img = cv2.resize(img, (1080, 720))
             height, width, _ = img.shape
-            # print(height, width)
             start_time = time.perf_counter()
             poses = self.pose_estimator.infer(img)
             
@@ -83,39 +80,24 @@ class RecognitionDemo(object):
                     skeleton_seq = self.data_extractor.pose2numpy(counter, poses_list)
 
                     prediction = self.action_classifier.infer(skeleton_seq)
-                    # print(prediction)
                     skeleton_seq = []
                     category_labels = self.preds2label(prediction.confidence)
-                    print(category_labels)
-                    if max(list(category_labels.values())) > 0.7:
-                        # self.draw_predgit ss(img, category_labels)
-
+                    if max(list(category_labels.values())) > 0.85:
                         predicted_label = torch.argmax(prediction.confidence)
-                        # print(predicted_label)
-                        predicted_labels.append(predicted_label.item())
-                        
-            voting_label = ""
-            if len(predicted_labels) == 60:
-                voting_result = max(predicted_labels, key=predicted_labels.count)
-                predicted_labels.clear()
-                
-                voting_label = self.action_labels[voting_result]
-            print(voting_label)
-            # if len(voting_label) > 0:
-            #     voting_label
+                        if counter > 150:
+                            pred_text = self.action_labels[predicted_label.item()]
+                        else:
+                            pred_text = ""
+                        img = cv2.putText(img, pred_text,(100, 220),cv2.FONT_HERSHEY_SIMPLEX,3,(0, 0, 255),3)                        
+
             end_time = time.perf_counter()
             fps = 1.0 / (end_time - start_time)
             avg_fps = 0.8 * fps + 0.2 * fps
             img = cv2.putText(img,"FPS: %.2f" % (avg_fps,),(100, 400),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
-            
-            img = cv2.putText(img, voting_label,(100, 220),cv2.FONT_HERSHEY_SIMPLEX,3,(0, 0, 255),3)
             cv2.imshow("Result", img)
             key = cv2.waitKey(1)
             if key == ord("q"):
                 break 
-            # if len(voting_label) > 0:
-            #     self.no_frames = 20
-            #     self.puttext_in_consecutive_frames(self.no_frames, img, voting_label)
                  
     def display_pose_name(self, image, text):
         img = cv2.putText(
@@ -142,6 +124,6 @@ class RecognitionDemo(object):
     
     
 if __name__ == "__main__":
-    path = "./resources/test_videos/wholeaction.mp4"
+    path = "./resources/test_videos/wholeaction_v2.mp4"
     recdem = RecognitionDemo(video_path=path)
     recdem.prediction()
