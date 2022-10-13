@@ -110,13 +110,13 @@ class Model(nn.Module):
         self.st_gcn_networks = nn.ModuleList((
             st_gcn(in_channels, 64, kernel_size, 1, residual=False, **kwargs0),
             st_gcn(64, 64, kernel_size, 1, **kwargs),
-            # st_gcn(64, 64, kernel_size, 1, **kwargs),
-            # st_gcn(64, 64, kernel_size, 1, **kwargs),
+            st_gcn(64, 64, kernel_size, 1, **kwargs),
+            st_gcn(64, 64, kernel_size, 1, **kwargs),
             st_gcn(64, 128, kernel_size, 2, **kwargs),
-            # st_gcn(128, 128, kernel_size, 1, **kwargs),
-            # st_gcn(128, 128, kernel_size, 1, **kwargs),
+            st_gcn(128, 128, kernel_size, 1, **kwargs),
+            st_gcn(128, 128, kernel_size, 1, **kwargs),
             st_gcn(128, 256, kernel_size, 2, **kwargs),
-            # st_gcn(256, 256, kernel_size, 1, **kwargs),
+            st_gcn(256, 256, kernel_size, 1, **kwargs),
             st_gcn(256, 256, kernel_size, 1, **kwargs),
         ))
 
