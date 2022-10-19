@@ -12,7 +12,7 @@ from inference.pose_estimation.lightweight_open_pose.lightweight_open_pose_learn
 from inference.pose_estimation.lightweight_open_pose.utilities import draw
 import pickle
 from tqdm import tqdm
-
+import json
 class VideoReader(object):
     def __init__(self, file_name):
         self.file_name = file_name
@@ -36,7 +36,7 @@ class VideoReader(object):
         return img
 
 class DataExtractor(object):
-    def __init__(self, channels = 2, total_frames = 300, landmarks = 18, num_persons = 1, videos_path = None, visualize = False, use_skip_frames = False):  
+    def __init__(self, channels = 2, total_frames = 300, landmarks = 18, num_persons = 1, videos_path = None, visualize = False, use_skip_frames = False, save_keypoints = False):  
         self.channels = channels
         self.total_frames = total_frames
         self.landmarks = landmarks
@@ -46,6 +46,7 @@ class DataExtractor(object):
         self.videos_path = videos_path
         self.visualize = visualize
         self.use_skip_frames = use_skip_frames
+        self.save_keypoints = save_keypoints
 
     def tile(self, a, dim, n_tile):
         a = torch.from_numpy(a)
@@ -158,7 +159,17 @@ class DataExtractor(object):
                     for cnt in range(counter - total_frames):
                         poses_list.pop(0)
                     counter = total_frames
-        
+            
+            if self.save_keypoints:
+                json_output_path = "./resources/json_keypoints_data"
+                if not os.path.exists(json_output_path):
+                    os.makedirs(json_output_path)
+                video_keypoints = {}
+                for index, value in enumerate(poses_list):
+                    video_keypoints[index] = (poses_list[index][0].data).tolist()
+                with open(f"{json_output_path}/{s}.json", "w") as f:
+                    json.dump(video_keypoints, f)
+                
             if counter > 0:
                 frame_skeleton_seq = self.pose2numpy(counter, poses_list)
                 skeleton_data[i, :, :, :, :] = frame_skeleton_seq
@@ -198,10 +209,11 @@ class DataExtractor(object):
         
 
 if __name__ == "__main__":
-    videos_path = "/media/lakpa/Storage/youngdusan_data/all_resized_videos"
-    out_path = "./resources/all_classes_60frames_test"
+    # videos_path = "/media/lakpa/Storage/youngdusan_data/all_resized_videos"
+    videos_path = "/media/lakpa/Storage/youngdusan_data/test_video"
+    out_path = "./resources/all_classes_60frames_test_videosample"
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     
-    dataextractor = DataExtractor(videos_path=videos_path, visualize=False, total_frames=60)
+    dataextractor = DataExtractor(videos_path=videos_path, visualize=False, save_keypoints = True, total_frames=60)
     dataextractor.data_gen(out_path)
