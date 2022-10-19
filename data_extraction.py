@@ -9,7 +9,7 @@ import natsort
 import os
 from inference.pose_estimation.lightweight_open_pose.lightweight_open_pose_learner import \
     LightweightOpenPoseLearner
-from inference.pose_estimation.lightweight_open_pose.utilities import draw, draw_no_bg
+from inference.pose_estimation.lightweight_open_pose.utilities import draw
 import pickle
 from tqdm import tqdm
 import json
