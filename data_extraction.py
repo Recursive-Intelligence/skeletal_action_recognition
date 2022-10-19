@@ -166,9 +166,9 @@ class DataExtractor(object):
                     os.makedirs(json_output_path)
                 video_keypoints = {}
                 for index, value in enumerate(poses_list):
-                    video_keypoints[index] = (poses_list[index][0].data).tolist()
+                    video_keypoints[f"frame_{index}"] = (poses_list[index][0].data).tolist()
                 with open(f"{json_output_path}/{s}.json", "w") as f:
-                    json.dump(video_keypoints, f)
+                    json.dump(video_keypoints, f, indent=3)
                 
             if counter > 0:
                 frame_skeleton_seq = self.pose2numpy(counter, poses_list)
