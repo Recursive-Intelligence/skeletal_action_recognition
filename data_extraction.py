@@ -9,7 +9,7 @@ import natsort
 import os
 from inference.pose_estimation.lightweight_open_pose.lightweight_open_pose_learner import \
     LightweightOpenPoseLearner
-from inference.pose_estimation.lightweight_open_pose.utilities import draw
+from inference.pose_estimation.lightweight_open_pose.utilities import draw, draw_no_bg
 import pickle
 from tqdm import tqdm
 import json
@@ -36,7 +36,7 @@ class VideoReader(object):
         return img
 
 class DataExtractor(object):
-    def __init__(self, channels = 2, total_frames = 300, landmarks = 18, num_persons = 1, videos_path = None, visualize = False, use_skip_frames = False, save_keypoints = False):  
+    def __init__(self, channels = 2, total_frames = 300, landmarks = 18, num_persons = 1, videos_path = None, visualize = False, use_skip_frames = False, save_keypoints = False, no_bg = False):  
         self.channels = channels
         self.total_frames = total_frames
         self.landmarks = landmarks
@@ -47,6 +47,7 @@ class DataExtractor(object):
         self.visualize = visualize
         self.use_skip_frames = use_skip_frames
         self.save_keypoints = save_keypoints
+        self.no_bg = no_bg
 
     def tile(self, a, dim, n_tile):
         a = torch.from_numpy(a)
@@ -127,19 +128,22 @@ class DataExtractor(object):
         skeleton_data = np.zeros(
             (len(sample_names), 2, total_frames, 18, 1), dtype=np.float32
         )
+        bg_img = cv2.resize(cv2.imread("./resources/bg_image.jpg"), (1080, 720))
         for i, s in enumerate(tqdm(sample_names)):
             video_path = os.path.join(self.videos_path, s + ".mp4")
             image_provider = VideoReader(video_path)
             
             counter = 0
             poses_list = []        
-                    
             for img in image_provider:
                 start_time = time.perf_counter()
                 poses = self.pose_estimator.infer(img)
-
+                
+                if self.no_bg:
+                    img = bg_img.copy()
+                    
                 for pose in poses:
-                    draw(img, pose)
+                        draw(img, pose)
 
                 if len(poses) > 0:
                     counter += 1
@@ -215,5 +219,5 @@ if __name__ == "__main__":
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     
-    dataextractor = DataExtractor(videos_path=videos_path, visualize=False, save_keypoints = True, total_frames=60)
+    dataextractor = DataExtractor(videos_path=videos_path, visualize=True, save_keypoints = False, no_bg = True, total_frames=60)
     dataextractor.data_gen(out_path)
