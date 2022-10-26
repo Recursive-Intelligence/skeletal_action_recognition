@@ -85,7 +85,7 @@ class RecognitionDemo(object):
                     prediction = self.action_classifier.infer(skeleton_seq)
                     skeleton_seq = []
                     category_labels = self.preds2label(prediction.confidence)
-                    if max(list(category_labels.values())) > 0.80:
+                    if max(list(category_labels.values())) > 0.60:
                         predicted_label = torch.argmax(prediction.confidence)
                         if counter > 20:
                             pred_text = self.action_labels[predicted_label.item()]
@@ -136,6 +136,7 @@ class RecognitionDemo(object):
     
     
 if __name__ == "__main__":
-    path = "./resources/test_videos/wholeaction_v2.mp4"
-    recdem = RecognitionDemo(video_path=path)
+    # path = "./resources/test_videos/wholeaction_v2.mp4"
+    path = "./videofile.avi"
+    recdem = RecognitionDemo(video_path=0)
     recdem.prediction()
