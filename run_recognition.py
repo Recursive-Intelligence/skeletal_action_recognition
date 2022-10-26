@@ -58,6 +58,7 @@ class RecognitionDemo(object):
 
     def prediction(self):
         counter = 0
+        frame_count = 0
         poses_list = []
         pred_list = []
         for img in self.image_provider:
@@ -71,19 +72,20 @@ class RecognitionDemo(object):
                     
                 if len(poses) > 0:
                     counter += 1
+                    frame_count += 1
                     poses_list.append(poses)
 
                 if counter > self.data_extractor.total_frames:
                     poses_list.pop(0)
                     counter = self.data_extractor.total_frames
 
-                if counter > 0:
+                if counter > 0 and frame_count > 60:
                     skeleton_seq = self.data_extractor.pose2numpy(counter, poses_list)
 
                     prediction = self.action_classifier.infer(skeleton_seq)
                     skeleton_seq = []
                     category_labels = self.preds2label(prediction.confidence)
-                    if max(list(category_labels.values())) > 0.75:
+                    if max(list(category_labels.values())) > 0.80:
                         predicted_label = torch.argmax(prediction.confidence)
                         if counter > 20:
                             pred_text = self.action_labels[predicted_label.item()]
@@ -91,8 +93,8 @@ class RecognitionDemo(object):
                         else:
                             pred_text = ""   
                         
-                        if len(pred_list) > 50:
-                            final_pred = max(pred_list[40:],key=pred_list[40:].count)
+                        if len(pred_list) > 40:
+                            final_pred = max(pred_list[35:],key=pred_list[35:].count)
                             pred_list.clear()
                             print(final_pred)
                             img = cv2.putText(img, final_pred,(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)
