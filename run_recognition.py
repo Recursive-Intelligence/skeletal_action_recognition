@@ -83,20 +83,22 @@ class RecognitionDemo(object):
                     prediction = self.action_classifier.infer(skeleton_seq)
                     skeleton_seq = []
                     category_labels = self.preds2label(prediction.confidence)
-                    if max(list(category_labels.values())) > 0.85:
+                    if max(list(category_labels.values())) > 0.75:
                         predicted_label = torch.argmax(prediction.confidence)
-                        if counter > 150:
+                        if counter > 20:
                             pred_text = self.action_labels[predicted_label.item()]
                             pred_list.append(pred_text)
                         else:
                             pred_text = ""   
                         
-                        if len(pred_list) > 10:
+                        if len(pred_list) > 50:
+                            final_pred = max(pred_list[40:],key=pred_list[40:].count)
                             pred_list.clear()
-                            img = cv2.putText(img, "",(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)
+                            print(final_pred)
+                            img = cv2.putText(img, final_pred,(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)
                         
                         else:                         
-                            img = cv2.putText(img, pred_text,(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)                        
+                            img = cv2.putText(img, "",(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)                        
             
             end_time = time.perf_counter()
             fps = 1.0 / (end_time - start_time)
