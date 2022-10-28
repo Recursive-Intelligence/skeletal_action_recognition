@@ -7,7 +7,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from graphs.kinetics import KineticsGraph
+# from graphs.kinetics import KineticsGraph
+from graphs.mpg import MediapipeGraph
 
 class ConvTemporalGraphical(nn.Module):
 
@@ -97,7 +98,7 @@ class Model(nn.Module):
         super().__init__()
 
         # load graph
-        self.graph = KineticsGraph()
+        self.graph = MediapipeGraph()
         A = torch.tensor(self.graph.A, dtype=torch.float32, requires_grad=False)
         self.register_buffer('A', A)
 
