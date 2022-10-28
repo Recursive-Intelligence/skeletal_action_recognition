@@ -5,7 +5,7 @@ Modified based on: https://github.com/open-mmlab/mmskeleton
 import numpy as np
 
 
-num_node = 18
+num_node = 33
 self_link = [(i, i) for i in range(num_node)]
 in_edge = [(0,1), (1,2), (2, 3), (3, 7), (0,4), (4, 5), (5, 6), (6, 8), (0, 10),
            (0, 9), (0, 11), (0, 12), (11, 13), (13, 15), (15, 17), (15, 21),
@@ -43,7 +43,7 @@ def get_spatial_graph(num_node, self_link, in_edge, out_edge):
     return A
 
 
-class KineticsGraph:
+class MediapipeGraph:
     def __init__(self, labeling_mode='spatial'):
         self.A = self.get_adjacency_matrix(labeling_mode)
         self.num_node = num_node
