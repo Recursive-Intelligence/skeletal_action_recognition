@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from graphs.kinetics import KineticsGraph
+from graphs.mpg import MediapipeGraph
 from graphs.nturgbd import NTUGraph
 
 
@@ -113,6 +114,8 @@ class STGCN(nn.Module):
             self.graph = NTUGraph()
         elif graph_type == 'openpose' or num_point == 18:
             self.graph = KineticsGraph()
+        elif graph_type == "mediapipe" or num_point = 33:
+            self.graph = MediapipeGraph()
 
         A = self.graph.A
         self.data_bn = nn.BatchNorm1d(num_person * in_channels * num_point)
