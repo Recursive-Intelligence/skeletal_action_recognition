@@ -130,6 +130,7 @@ class RecognitionDemo(object):
         frame_keypoints = {}
         poses = []
         pred_list = []
+        final_preds = []
         cap = cv2.VideoCapture(path)
         
         with self.mp_pose.Pose(
@@ -193,9 +194,23 @@ class RecognitionDemo(object):
                                 final_pred = max(pred_list[35:],key=pred_list[35:].count)
                                 pred_list.clear()
                                 print(final_pred)
-                                image = cv2.putText(image, final_pred,(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)
-                            
-                            else:                         
+                                
+                                # Save predictions in a list
+                                final_preds.append(final_pred)
+                                
+                                # Check consecutive prediction of the frame
+                                # If two consecutive frames same then, show second last frame
+                                # else show the last frame
+                                if len(final_preds) > 1:
+                                    if final_preds[-1] == final_preds[-2]:
+                                        pred_to_show = final_preds[-2]
+                                        # Perform fifo ops
+                                        final_preds.pop(0)
+                                    else:
+                                        pred_to_show = final_preds[-1]
+                                    image = cv2.putText(image, pred_to_show,(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2) 
+                            else:       
+                                            
                                 image = cv2.putText(image, "",(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)                        
 
                     minx, miny, maxx, maxy = self.draw_boundingbox(
