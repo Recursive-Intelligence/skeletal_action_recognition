@@ -114,7 +114,7 @@ class STGCN(nn.Module):
             self.graph = NTUGraph()
         elif graph_type == 'openpose' or num_point == 18:
             self.graph = KineticsGraph()
-        elif graph_type == "mediapipe" or num_point = 33:
+        elif graph_type == "mediapipe" or num_point == 33:
             self.graph = MediapipeGraph()
 
         A = self.graph.A
