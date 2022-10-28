@@ -10,16 +10,20 @@ from train_stgcn import SpatioTemporalGCNLearner
 import mediapipe as mp
 
 class RecognitionDemo(object):
-    def __init__(self, video_path):
+    def __init__(self, total_frames = 300, channels = 2, landmarks = 33, no_person = 1):
         self.action_classifier = SpatioTemporalGCNLearner(
-            in_channels=2,
-            num_point=18,
-            graph_type="openpose",
+            in_channels=channels,
+            num_point=landmarks,
+            graph_type="mediapipe",
         )
+        self.channels = channels
+        self.landmarks, self.num_persons = landmarks, no_person
+        self.total_frames = total_frames
         self.model_saved_path = "./temp/mediapipe_model_checkpoints"
-        self.action_classifier.load(self.model_saved_path, "/mediapipe_model-44-945")  
+        self.action_classifier.load(self.model_saved_path, "mediapipe_model-44-945")  
         self.mp_pose = mp.solutions.pose
         self.mp_drawing = mp.solutions.drawing_utils
+        self.mp_drawing_styles = mp.solutions.drawing_styles
         self.no_frames = 0
         self.action_labels = {0 : 'big_wind', 1 : 'bokbulbok', 2 : 'chalseok_chalseok_phaldo', 3 : 'chulong_chulong_phaldo', 4 : 'crafty_tricks',
                                 5 : 'flower_clock', 6 : 'seaweed_in_the_swell_sea', 7 : 'sowing_corn_and_driving_pigeons', 8 : 'waves_crashing',
@@ -46,10 +50,50 @@ class RecognitionDemo(object):
                 2,
             )
 
+    def tile(self, a, dim, n_tile):
+        a = torch.from_numpy(a)
+        init_dim = a.size(dim)
+        repeat_idx = [1] * a.dim()
+        repeat_idx[dim] = n_tile
+        a = a.repeat(*repeat_idx)
+        order_index = torch.LongTensor(
+            np.concatenate([init_dim * np.arange(n_tile) + i for i in range(init_dim)])
+        )
+        tiled_a = torch.index_select(a, dim, order_index)
+        return tiled_a.numpy()
+    
+    def pose2numpy(self, num_current_frames, landmark_list):
+        data_numpy = np.zeros((1, self.channels, num_current_frames, self.landmarks, self.num_persons))
+        skeleton_seq = np.zeros((1, self.channels, self.total_frames, self.landmarks, self.num_persons))
+        
+        for t in range(num_current_frames):
+            m = 0 # Only predicted single pose
+            # kps = np.array(landmark_list.get(f"frame_{t}"))
+            data_numpy[0, 0:2, t, :, m] = np.transpose(np.array(landmark_list.get(f"frame_{t}")))
+
+        # if we have less than num_frames, repeat frames to reach num_frames
+        diff = self.total_frames - num_current_frames
+        if diff == 0:
+            skeleton_seq = data_numpy
+        while diff > 0:
+            num_tiles = int(diff / num_current_frames)
+            if num_tiles > 0:
+                data_numpy = self.tile(data_numpy, 2, num_tiles + 1)
+                num_current_frames = data_numpy.shape[2]
+                diff = self.total_frames - num_current_frames
+            elif num_tiles == 0:
+                skeleton_seq[:, :, :num_current_frames, :, :] = data_numpy
+                for j in range(diff):
+                    skeleton_seq[:, :, num_current_frames + j, :, :] = data_numpy[
+                        :, :, -1, :, :
+                    ]
+                break
+        return skeleton_seq
+    
     def prediction(self, path):
         counter = 0
-        frame_count = 0
-        poses_list = []
+        frame_keypoints = {}
+        poses = []
         pred_list = []
         cap = cv2.VideoCapture(path)
         
@@ -64,32 +108,39 @@ class RecognitionDemo(object):
                 start_time = time.perf_counter()
                 height, width, _ = image.shape
 
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 # To improve performance, optionally mark the image as not writeable to
                 # pass by reference.
                 image.flags.writeable = False
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 results = pose.process(image)
                 if not results.pose_landmarks:
                     continue
                 
+                image.flags.writeable = True
+                self.mp_drawing.draw_landmarks(
+                    image,
+                    results.pose_landmarks,
+                    self.mp_pose.POSE_CONNECTIONS,
+                    landmark_drawing_spec=self.mp_drawing_styles.get_default_pose_landmarks_style())
                 
-                poses = results.pose_landmarks.landmark
+                
+                pose = results.pose_landmarks.landmark
+                poses.append(pose)
+                counter += 1
                 
                 if not len(poses) == 0:
-                    for pose in poses:
-                        draw(img, pose)
+                    if counter > self.total_frames:
+                        poses.pop(0)
+                        counter = self.total_frames
                         
-                    if len(poses) > 0:
-                        counter += 1
-                        frame_count += 1
-                        poses_list.append(poses)
+                    for index, pose in enumerate(poses):
+                        frame_landmarks = []
+                        for keypoint in pose:
+                            frame_landmarks.append([keypoint.x, keypoint.y]) 
+                        frame_keypoints[f"frame_{index}"] = frame_landmarks
 
-                    if counter > self.data_extractor.total_frames:
-                        poses_list.pop(0)
-                        counter = self.data_extractor.total_frames
-
-                    if counter > 0 and frame_count > 60:
-                        skeleton_seq = self.data_extractor.pose2numpy(counter, poses_list)
+                    if counter > 0:
+                        skeleton_seq = self.pose2numpy(counter, frame_keypoints)
 
                         prediction = self.action_classifier.infer(skeleton_seq)
                         skeleton_seq = []
@@ -106,22 +157,22 @@ class RecognitionDemo(object):
                                 final_pred = max(pred_list[35:],key=pred_list[35:].count)
                                 pred_list.clear()
                                 print(final_pred)
-                                img = cv2.putText(img, final_pred,(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)
+                                image = cv2.putText(image, final_pred,(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)
                             
                             else:                         
-                                img = cv2.putText(img, "",(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)                        
+                                image = cv2.putText(image, "",(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)                        
                 
-                end_time = time.perf_counter()
-                fps = 1.0 / (end_time - start_time)
-                avg_fps = 0.8 * fps + 0.2 * fps
-                img = cv2.putText(img,"FPS: %.2f" % (avg_fps,),(10, 60),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
-                cv2.imshow("Result", img)
-                key = cv2.waitKey(1)
-                if key == ord("q"):
-                    break 
+                    end_time = time.perf_counter()
+                    fps = 1.0 / (end_time - start_time)
+                    avg_fps = 0.8 * fps + 0.2 * fps
+                    image = cv2.putText(image,"FPS: %.2f" % (avg_fps,),(10, 60),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
+                    cv2.imshow("Result", image)
+                    key = cv2.waitKey(1)
+                    if key == ord("q"):
+                        break 
                  
     def display_pose_name(self, image, text):
-        img = cv2.putText(
+        image = cv2.putText(
             image,
             text,
             (7, 50),
@@ -131,7 +182,7 @@ class RecognitionDemo(object):
             2,
         )
     
-        cv2.imshow("Result", img)
+        cv2.imshow("Result", image)
         
     def check_no_frames(self, frames, image, voting_label):
         if frames != 0:
