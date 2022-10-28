@@ -9,7 +9,6 @@ import torch
 import natsort
 import os
 import mediapipe as mp
-from mp_extractor import LandmarksExtraction
 import pickle
 from tqdm import tqdm
 import json
@@ -23,9 +22,9 @@ class VideoReader(object):
 
     def __iter__(self):
         self.cap = cv2.VideoCapture(self.file_name)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        self.cap.set(cv2.CAP_PROP_FPS, 20)
+        # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        # self.cap.set(cv2.CAP_PROP_FPS, 20)
         if not self.cap.isOpened():
             raise IOError("Video {} cannot be opened".format(self.file_name))
         return self
