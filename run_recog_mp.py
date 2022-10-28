@@ -111,7 +111,7 @@ class RecognitionDemo(object):
                 # To improve performance, optionally mark the image as not writeable to
                 # pass by reference.
                 image.flags.writeable = False
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 results = pose.process(image)
                 if not results.pose_landmarks:
                     continue
@@ -124,8 +124,8 @@ class RecognitionDemo(object):
                     landmark_drawing_spec=self.mp_drawing_styles.get_default_pose_landmarks_style())
                 
                 
-                pose = results.pose_landmarks.landmark
-                poses.append(pose)
+                pred_pose = results.pose_landmarks.landmark
+                poses.append(pred_pose)
                 counter += 1
                 
                 if not len(poses) == 0:
@@ -133,9 +133,9 @@ class RecognitionDemo(object):
                         poses.pop(0)
                         counter = self.total_frames
                         
-                    for index, pose in enumerate(poses):
+                    for index, frame_pose in enumerate(poses):
                         frame_landmarks = []
-                        for keypoint in pose:
+                        for keypoint in frame_pose:
                             frame_landmarks.append([keypoint.x, keypoint.y]) 
                         frame_keypoints[f"frame_{index}"] = frame_landmarks
 
