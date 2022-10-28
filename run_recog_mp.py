@@ -89,6 +89,41 @@ class RecognitionDemo(object):
                     ]
                 break
         return skeleton_seq
+
+    def draw_boundingbox(self, image, pose_skeleton_flattened):
+        """Draws bounding box around the image
+        Args:
+            image (tensor): Input image where bounding box is to be drawn
+            skeleton (list): Exctracted pose skeleton from mediapipe
+        Returns:
+            ints: minimum and maximum values of x and y for bounding boxes
+        """
+        # Set initial values for min and max of x and y
+        minx = 999
+        miny = 999
+        maxx = -999
+        maxy = -999
+        i = 0
+        NaN = 0
+
+        while i < len(pose_skeleton_flattened):
+            if not (
+                pose_skeleton_flattened[i] == NaN
+                or pose_skeleton_flattened[i + 1] == NaN
+            ):
+                minx = min(minx, pose_skeleton_flattened[i])
+                maxx = max(maxx, pose_skeleton_flattened[i])
+                miny = min(miny, pose_skeleton_flattened[i + 1])
+                maxy = max(maxy, pose_skeleton_flattened[i + 1])
+            i += 2
+
+        # Scale the min and max value according to image shape
+        minx = int(minx * image.shape[1])
+        miny = int(miny * image.shape[0])
+        maxx = int(maxx * image.shape[1])
+        maxy = int(maxy * image.shape[0])
+
+        return minx, miny, maxx, maxy
     
     def prediction(self, path):
         counter = 0
@@ -137,8 +172,9 @@ class RecognitionDemo(object):
                         frame_landmarks = []
                         for keypoint in frame_pose:
                             frame_landmarks.append([keypoint.x, keypoint.y]) 
+                        frame_landmarks_flattened = [keypoint for landmark in frame_landmarks for keypoint in landmark]
                         frame_keypoints[f"frame_{index}"] = frame_landmarks
-
+                
                     if counter > 0:
                         skeleton_seq = self.pose2numpy(counter, frame_keypoints)
 
@@ -161,7 +197,12 @@ class RecognitionDemo(object):
                             
                             else:                         
                                 image = cv2.putText(image, "",(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)                        
-                
+
+                    minx, miny, maxx, maxy = self.draw_boundingbox(
+                        image, frame_landmarks_flattened
+                    )
+                    image = cv2.rectangle(image, (minx, miny), (maxx, maxy), (0, 255, 0), 4)
+                        
                     end_time = time.perf_counter()
                     fps = 1.0 / (end_time - start_time)
                     avg_fps = 0.8 * fps + 0.2 * fps
