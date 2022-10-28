@@ -176,6 +176,10 @@ class RecognitionDemo(object):
                         frame_landmarks_flattened = [keypoint for landmark in frame_landmarks for keypoint in landmark]
                         frame_keypoints[f"frame_{index}"] = frame_landmarks
                 
+                    # Calculate the min and max value for bounding box creation
+                    minx, miny, maxx, maxy = self.draw_boundingbox(
+                        image, frame_landmarks_flattened
+                    )
                     if counter > 0:
                         skeleton_seq = self.pose2numpy(counter, frame_keypoints)
 
@@ -208,14 +212,12 @@ class RecognitionDemo(object):
                                         final_preds.pop(0)
                                     else:
                                         pred_to_show = final_preds[-1]
-                                    image = cv2.putText(image, pred_to_show,(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2) 
+                                    image = cv2.putText(image, pred_to_show,(minx, miny),cv2.FONT_HERSHEY_COMPLEX_SMALL,2,(0, 0, 255),2) 
                             else:       
                                             
                                 image = cv2.putText(image, "",(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)                        
 
-                    minx, miny, maxx, maxy = self.draw_boundingbox(
-                        image, frame_landmarks_flattened
-                    )
+                    # Create the bounding box
                     image = cv2.rectangle(image, (minx, miny), (maxx, maxy), (0, 255, 0), 4)
                         
                     end_time = time.perf_counter()
