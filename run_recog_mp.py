@@ -206,7 +206,7 @@ class RecognitionDemo(object):
                     end_time = time.perf_counter()
                     fps = 1.0 / (end_time - start_time)
                     avg_fps = 0.8 * fps + 0.2 * fps
-                    image = cv2.putText(image,"FPS: %.2f" % (avg_fps,),(10, 60),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
+                    image = cv2.putText(image,"frames per sec: %.2f" % (avg_fps,),(10, 60),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
                     cv2.imshow("Result", image)
                     key = cv2.waitKey(1)
                     if key == ord("q"):
