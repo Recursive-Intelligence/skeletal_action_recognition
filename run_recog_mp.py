@@ -25,9 +25,13 @@ class RecognitionDemo(object):
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
         self.no_frames = 0
-        self.action_labels = {0 : 'big_wind', 1 : 'bokbulbok', 2 : 'chalseok_chalseok_phaldo', 3 : 'chulong_chulong_phaldo', 4 : 'crafty_tricks',
-                                5 : 'flower_clock', 6 : 'seaweed_in_the_swell_sea', 7 : 'sowing_corn_and_driving_pigeons', 8 : 'waves_crashing',
-                                9 : 'wind_that_shakes_trees'}
+        # self.action_labels = {0 : 'big_wind', 1 : 'bokbulbok', 2 : 'chalseok_chalseok_phaldo', 3 : 'chulong_chulong_phaldo', 4 : 'crafty_tricks',
+        #                         5 : 'flower_clock', 6 : 'seaweed_in_the_swell_sea', 7 : 'sowing_corn_and_driving_pigeons', 8 : 'waves_crashing',
+        #                         9 : 'wind_that_shakes_trees'}
+
+        self.action_labels = {0 : '큰바람', 1 : '복불복', 2 : '철썩철썩 파도', 3 : '출렁출렁 파도', 4 : '교묘한 속임술',
+                                5 : '꽃시계', 6 : '너울너울바다의해초', 7 : '옥수수 뿌리며 비둘기 몰이', 8 : '넘실넘실 파도',
+                                9 : '나무를 흔드는 바람'}
 
     def preds2label(self, confidence):
         k = 10
@@ -132,7 +136,10 @@ class RecognitionDemo(object):
         pred_list = []
         final_preds = []
         cap = cv2.VideoCapture(path)
+        # cap.set()
         
+        # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         with self.mp_pose.Pose(
             min_detection_confidence=0.5, min_tracking_confidence=0.5
         ) as pose:
@@ -143,6 +150,7 @@ class RecognitionDemo(object):
                     break
                 start_time = time.perf_counter()
                 height, width, _ = image.shape
+                # print()
 
                 # To improve performance, optionally mark the image as not writeable to
                 # pass by reference.
@@ -210,8 +218,10 @@ class RecognitionDemo(object):
                                         pred_to_show = final_preds[-2]
                                         # Perform fifo ops
                                         final_preds.pop(0)
+                                        # print(pred_to_show)
                                     else:
                                         pred_to_show = final_preds[-1]
+                                        # print(pred_to_show)
                                     image = cv2.putText(image, pred_to_show,(minx, miny),cv2.FONT_HERSHEY_COMPLEX_SMALL,2,(0, 0, 255),2) 
                             else:       
                                             
@@ -257,4 +267,4 @@ if __name__ == "__main__":
     path = "./resources/test_videos/wholeaction_v2.mp4"
     # path = "./videofile.avi"
     recdem = RecognitionDemo()
-    recdem.prediction(path = path)
+    recdem.prediction(path = 0)
