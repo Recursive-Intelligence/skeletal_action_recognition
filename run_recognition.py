@@ -58,7 +58,9 @@ class RecognitionDemo(object):
 
     def prediction(self):
         counter = 0
+        frame_count = 0
         poses_list = []
+        pred_list = []
         for img in self.image_provider:
             height, width, _ = img.shape
             start_time = time.perf_counter()
@@ -70,30 +72,40 @@ class RecognitionDemo(object):
                     
                 if len(poses) > 0:
                     counter += 1
+                    frame_count += 1
                     poses_list.append(poses)
 
                 if counter > self.data_extractor.total_frames:
                     poses_list.pop(0)
                     counter = self.data_extractor.total_frames
 
-                if counter > 0:
+                if counter > 0 and frame_count > 60:
                     skeleton_seq = self.data_extractor.pose2numpy(counter, poses_list)
 
                     prediction = self.action_classifier.infer(skeleton_seq)
                     skeleton_seq = []
                     category_labels = self.preds2label(prediction.confidence)
-                    if max(list(category_labels.values())) > 0.85:
+                    if max(list(category_labels.values())) > 0.60:
                         predicted_label = torch.argmax(prediction.confidence)
-                        if counter > 150:
+                        if counter > 20:
                             pred_text = self.action_labels[predicted_label.item()]
+                            pred_list.append(pred_text)
                         else:
-                            pred_text = ""
-                        img = cv2.putText(img, pred_text,(100, 220),cv2.FONT_HERSHEY_SIMPLEX,3,(0, 0, 255),3)                        
-
+                            pred_text = ""   
+                        
+                        if len(pred_list) > 40:
+                            final_pred = max(pred_list[35:],key=pred_list[35:].count)
+                            pred_list.clear()
+                            print(final_pred)
+                            img = cv2.putText(img, final_pred,(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)
+                        
+                        else:                         
+                            img = cv2.putText(img, "",(100, 100),cv2.FONT_HERSHEY_SIMPLEX,2,(0, 0, 255),2)                        
+            
             end_time = time.perf_counter()
             fps = 1.0 / (end_time - start_time)
             avg_fps = 0.8 * fps + 0.2 * fps
-            img = cv2.putText(img,"FPS: %.2f" % (avg_fps,),(100, 400),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
+            img = cv2.putText(img,"FPS: %.2f" % (avg_fps,),(10, 60),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0),2,cv2.LINE_AA,)
             cv2.imshow("Result", img)
             key = cv2.waitKey(1)
             if key == ord("q"):
@@ -124,6 +136,7 @@ class RecognitionDemo(object):
     
     
 if __name__ == "__main__":
-    path = "./resources/test_videos/wholeaction_v2.mp4"
-    recdem = RecognitionDemo(video_path=path)
+    # path = "./resources/test_videos/wholeaction_v2.mp4"
+    path = "./videofile.avi"
+    recdem = RecognitionDemo(video_path=0)
     recdem.prediction()

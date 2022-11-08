@@ -21,6 +21,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from graphs.kinetics import KineticsGraph
+from graphs.mpg import MediapipeGraph
 from inference.utils.constants import OPENDR_SERVER_URL
 from inference.utils.data import SkeletonSequence
 # OpenDR engine imports
@@ -46,17 +47,17 @@ class SpatioTemporalGCNLearner(Learner):
         device="cuda",
         num_workers=20,
         epochs=45,
-        experiment_name="yagr_all_class_60_frames_v2",
+        experiment_name="mediapipe_model",
         device_ind=[0],
         val_batch_size=256,
         drop_after_epoch=[30, 40],
         start_epoch=0,
-        dataset_name="ygar",
+        dataset_name="ygar_mp",
         num_class=10,
         num_point=18,
         num_person=1,
         in_channels=2,
-        graph_type="openpose",
+        graph_type="mediapipe",
         method_name="stgcn",
         old_model = True,
         stbln_symmetric=False,
@@ -104,7 +105,8 @@ class SpatioTemporalGCNLearner(Learner):
         self.num_frames = num_frames
         self.num_subframes = num_subframes
         self.old_model = old_model
-        self.graph = KineticsGraph()
+        # self.graph = KineticsGraph()
+        self.graph = MediapipeGraph()
 
         if self.num_subframes > self.num_frames:
             raise ValueError(
@@ -1227,5 +1229,6 @@ class SpatioTemporalGCNLearner(Learner):
 
 
 if __name__ == "__main__":
-    stgcn = SpatioTemporalGCNLearner(experiment_name="yagr_all_class_60_frames_v2", epochs=45, num_class=10, old_model=True)
-    results = stgcn.fit(dataset_path = "./resources/all_classes_60frames")
+    stgcn = SpatioTemporalGCNLearner(experiment_name="mediapipe_model", epochs=45, num_class=10, old_model=True)
+    # results = stgcn.fit(dataset_path = "./resources/all_classes_60frames")
+    results = stgcn.fit(dataset_path = "./resources/mediapipe_data")
