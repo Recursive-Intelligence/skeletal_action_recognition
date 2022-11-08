@@ -1,14 +1,13 @@
-# skeletal_action_recognition
+# Realtime Skeleton based Action Recognition using Spatio-temporal Graph Convolutional Networks
 
-Using demo
+A simplified action recognition project to detect performed dance actions in real time. 
 
-```
-python3 demo.py --device cuda --video 0 --method stgcn --action_checkpoint_name stgcn_ntu_cv_lw_openpose
+## Usage
+### 1. Prepare and extract data
+### 2. Train the model
+### 3. Perform real time recognition
+References:
+1. https://github.com/opendr-eu/opendr/blob/d8b1572e742bab6a2edc5ef8195cbf487c042a4d/src/opendr/perception/skeleton_based_action_recognition/spatio_temporal_gcn_learner.py
 
-```
-
-skeleton data extraction using lightweight openpose
-```
-python3 skeleton_extraction.py --videos_path path_to_dataset --out_folder path_to_save_skeleton_data --device cuda --num_channels 2  
-
-```
+2. https://github.com/open-mmlab/mmskeleton
+3. https://github.com/yysijie/st-gcn

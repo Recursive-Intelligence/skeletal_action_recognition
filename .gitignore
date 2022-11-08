@@ -8,10 +8,18 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+openpose_default/openpose_default.pth
+datasets/
 build/
+.vscode/
+resources/
+resized_videos/
+temp4class/
+temp_nturgbd/
 develop-eggs/
 dist/
 downloads/
+temp/
 eggs/
 .eggs/
 lib/

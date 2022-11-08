@@ -5,7 +5,7 @@ Modified based on: https://github.com/open-mmlab/mmskeleton
 import argparse
 import os
 import numpy as np
-from kinetics_feeder import KineticsFeeder
+from src.kinetics_feeder import KineticsFeeder
 import pickle
 from tqdm import tqdm
 import pandas
